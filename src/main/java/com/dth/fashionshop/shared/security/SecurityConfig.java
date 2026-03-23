@@ -36,8 +36,10 @@ public class SecurityConfig {
                         .requestMatchers(
                                 "/api/v1/identity/login",
                                 "/api/v1/identity/register",
+                                "/api/v1/identity/verify-otp",
                                 "/api/v1/identity/forgot-password",
-                                "/api/v1/identity/reset-password"
+                                "/api/v1/identity/reset-password",
+                                "/error"
                         ).permitAll()
 
                         // Mọi API khác trong hệ thống đều bị khóa, phải có Token mới được vào

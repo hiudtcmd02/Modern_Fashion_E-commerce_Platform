@@ -57,6 +57,9 @@ public class User {
     @Column(name = "otp_expiry_time")
     private LocalDateTime otpExpiryTime;
 
+    @Column(name = "last_otp_sent_at")
+    private LocalDateTime lastOtpSentAt;
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;

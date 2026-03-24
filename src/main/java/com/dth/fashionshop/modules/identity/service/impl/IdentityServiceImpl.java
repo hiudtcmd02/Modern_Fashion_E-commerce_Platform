@@ -1,6 +1,7 @@
 package com.dth.fashionshop.modules.identity.service.impl;
 
 import com.dth.fashionshop.modules.identity.dto.request.RegisterRequest;
+import com.dth.fashionshop.modules.identity.dto.request.ResendOtpRequest;
 import com.dth.fashionshop.modules.identity.dto.request.VerifyOtpRequest;
 import com.dth.fashionshop.modules.identity.entity.Role;
 import com.dth.fashionshop.modules.identity.entity.User;
@@ -54,13 +55,14 @@ public class IdentityServiceImpl implements IdentityService{
                 .status(UserStatus.INACTIVE)
                 .otpCode(otpCode)
                 .otpExpiryTime(LocalDateTime.now().plusMinutes(5))
+                .lastOtpSentAt(LocalDateTime.now())
                 .build();
 
         userRepository.save(newUser);
 
         emailService.sendOtpEmail(newUser.getEmail(), otpCode);
 
-        log.info("Đã lưu User mới trạng thái INACTIVE và gửi kích hoạt tiến trình gửi OTP qua email");
+        log.info("Đã lưu User mới với trạng thái INACTIVE và kích hoạt tiến trình gửi OTP qua email");
     }
 
     @Override
@@ -88,6 +90,44 @@ public class IdentityServiceImpl implements IdentityService{
         userRepository.save(user);
 
         log.info("Tài khoản {} đã được kích hoạt thành công!", user.getEmail());
+    }
+
+    @Override
+    @Transactional
+    public void resendOtp(ResendOtpRequest request) {
+        log.info("Yêu cầu gửi lại OTP cho email: {}", request.getEmail());
+
+        // 1. Tìm User trong Database
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này!"));
+
+        // 2. Chặn nếu tài khoản đã kích hoạt
+        if (user.getStatus() == UserStatus.ACTIVE) {
+            throw new RuntimeException("Tài khoản này đã được kích hoạt! Vui lòng đăng nhập.");
+        }
+
+        // 3. THUẬT TOÁN CHỐNG SPAM (Cooldown 60 giây)
+        if (user.getLastOtpSentAt() != null) {
+            // Tính số giây trôi qua kể từ lần gửi cuối cùng
+            long secondsSinceLastSent = java.time.temporal.ChronoUnit.SECONDS.between(user.getLastOtpSentAt(), LocalDateTime.now());
+
+            if (secondsSinceLastSent < 60) {
+                long waitTime = 60 - secondsSinceLastSent;
+                throw new RuntimeException("Vui lòng đợi " + waitTime + " giây trước khi yêu cầu gửi lại mã mới.");
+            }
+        }
+
+        // 4. Sinh mã OTP mới, gia hạn thêm 5 phút và cập nhật lại thời điểm gửi
+        String newOtpCode = generateOtpCode();
+        user.setOtpCode(newOtpCode);
+        user.setOtpExpiryTime(LocalDateTime.now().plusMinutes(5));
+        user.setLastOtpSentAt(LocalDateTime.now()); // <--- Cập nhật lại cột này bằng giờ hiện tại
+
+        // 5. Lưu DB và Bắn luồng gửi Email
+        userRepository.save(user);
+        emailService.sendOtpEmail(user.getEmail(), newOtpCode);
+
+        log.info("Đã cập nhật mã OTP mới và gửi email thành công cho: {}", user.getEmail());
     }
 
     public String generateOtpCode(){

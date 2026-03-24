@@ -1,6 +1,7 @@
 package com.dth.fashionshop.modules.identity.controller;
 
 import com.dth.fashionshop.modules.identity.dto.request.RegisterRequest;
+import com.dth.fashionshop.modules.identity.dto.request.ResendOtpRequest;
 import com.dth.fashionshop.modules.identity.dto.request.VerifyOtpRequest;
 import com.dth.fashionshop.modules.identity.service.IdentityService;
 import jakarta.validation.Valid;
@@ -31,5 +32,11 @@ public class IdentityController {
         identityService.verifyOtp(request);
 
         return ResponseEntity.ok(Map.of("message", "Xác thực OTP thành công! Tài khoản đã được kích hoạt."));
+    }
+
+    @PostMapping("/resend-otp")
+    public ResponseEntity<?> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
+        identityService.resendOtp(request);
+        return ResponseEntity.ok(Map.of("message", "Mã OTP mới đã được gửi! Vui lòng kiểm tra email."));
     }
 }

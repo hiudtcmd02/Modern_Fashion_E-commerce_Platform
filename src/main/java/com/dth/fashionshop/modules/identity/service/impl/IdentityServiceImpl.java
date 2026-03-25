@@ -1,22 +1,32 @@
 package com.dth.fashionshop.modules.identity.service.impl;
 
+import com.dth.fashionshop.modules.identity.dto.request.LoginRequest;
 import com.dth.fashionshop.modules.identity.dto.request.RegisterRequest;
 import com.dth.fashionshop.modules.identity.dto.request.ResendOtpRequest;
 import com.dth.fashionshop.modules.identity.dto.request.VerifyOtpRequest;
+import com.dth.fashionshop.modules.identity.dto.response.LoginResponse;
 import com.dth.fashionshop.modules.identity.entity.Role;
 import com.dth.fashionshop.modules.identity.entity.User;
 import com.dth.fashionshop.modules.identity.enums.UserStatus;
 import com.dth.fashionshop.modules.identity.repository.RoleRepository;
 import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.IdentityService;
+import com.dth.fashionshop.modules.identity.service.JwtService;
 import com.dth.fashionshop.shared.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.AuthenticationException;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Random;
 
 @Service
@@ -28,6 +38,9 @@ public class IdentityServiceImpl implements IdentityService{
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
+
+    private final AuthenticationManager authenticationManager;
+    private final JwtService jwtService;
 
     @Override
     @Transactional
@@ -109,7 +122,7 @@ public class IdentityServiceImpl implements IdentityService{
         // 3. THUẬT TOÁN CHỐNG SPAM (Cooldown 60 giây)
         if (user.getLastOtpSentAt() != null) {
             // Tính số giây trôi qua kể từ lần gửi cuối cùng
-            long secondsSinceLastSent = java.time.temporal.ChronoUnit.SECONDS.between(user.getLastOtpSentAt(), LocalDateTime.now());
+            long secondsSinceLastSent = ChronoUnit.SECONDS.between(user.getLastOtpSentAt(), LocalDateTime.now());
 
             if (secondsSinceLastSent < 60) {
                 long waitTime = 60 - secondsSinceLastSent;
@@ -128,6 +141,41 @@ public class IdentityServiceImpl implements IdentityService{
         emailService.sendOtpEmail(user.getEmail(), newOtpCode);
 
         log.info("Đã cập nhật mã OTP mới và gửi email thành công cho: {}", user.getEmail());
+    }
+
+    @Override
+    public LoginResponse login(LoginRequest request) {
+        log.info("Tiến hành xác thực đăng nhập cho email: {}", request.getEmail());
+
+        try { // 1. Giao toàn quyền cho Giám đốc An ninh (Kiểm tra cả Mật khẩu lẫn trạng thái ACTIVE)
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
+            );
+        } catch (DisabledException e) {
+            throw new RuntimeException("Tài khoản chưa được xác thực OTP. Vui lòng kiểm tra email!");
+        } catch (LockedException e) {
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ Admin!");
+        } catch (BadCredentialsException e) {
+            throw new RuntimeException("Email hoặc mật khẩu không chính xác!");
+        } catch (AuthenticationException e) {
+            throw new RuntimeException("Đăng nhập thất bại, vui lòng thử lại!");
+        }
+
+        // 2. Nếu code chạy được xuống đây, chắc chắn 100% tài khoản hợp lệ, mật khẩu ĐÚNG và đã ACTIVE.
+        // Chỉ cần lấy User lên để đúc thẻ JWT (Không cần if-else kiểm tra status thủ công nữa!!!)
+        User user = userRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
+
+        // 3. Mọi thứ hoàn hảo -> Nhờ Máy đúc thẻ tạo JWT
+        String jwtToken = jwtService.generateToken(user);
+        log.info("Đăng nhập thành công, đã cấp Token cho: {}", user.getEmail());
+
+        // 4. Đóng gói trả về cho Frontend
+        return LoginResponse.builder()
+                .accessToken(jwtToken)
+                .email(user.getEmail())
+                .fullName(user.getFullName())
+                .build();
     }
 
     public String generateOtpCode(){

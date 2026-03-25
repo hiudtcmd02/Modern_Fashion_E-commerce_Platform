@@ -1,7 +1,13 @@
 package com.dth.fashionshop.shared.security;
 
+import com.dth.fashionshop.modules.identity.service.CustomUserDetailsService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -12,7 +18,10 @@ import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
 @EnableWebSecurity
+@RequiredArgsConstructor
 public class SecurityConfig {
+
+    private final CustomUserDetailsService userDetailsService;
 
     // 1. Cấu hình thuật toán mã hóa mật khẩu
     @Bean
@@ -48,5 +57,25 @@ public class SecurityConfig {
                 );
 
         return http.build();
+    }
+
+    // 1. Cỗ máy xác thực (Quy định cách thức kiểm tra mật khẩu)
+    @Bean
+    public AuthenticationProvider authenticationProvider() {
+        // TRUYỀN THẲNG userDetailsService VÀO HÀM KHỞI TẠO Ở ĐÂY:
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
+
+        // Vẫn cấu hình máy giải mã mật khẩu bình thường
+        authProvider.setPasswordEncoder(passwordEncoder());
+
+        // Không còn cần gọi hàm setUserDetailsService nữa!
+
+        return authProvider;
+    }
+
+    // 2. Vị Giám đốc An ninh (Sẽ được gọi ở tầng Controller/Service để kích hoạt tiến trình đăng nhập)
+    @Bean
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
+        return config.getAuthenticationManager();
     }
 }

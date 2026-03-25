@@ -1,8 +1,10 @@
 package com.dth.fashionshop.modules.identity.controller;
 
+import com.dth.fashionshop.modules.identity.dto.request.LoginRequest;
 import com.dth.fashionshop.modules.identity.dto.request.RegisterRequest;
 import com.dth.fashionshop.modules.identity.dto.request.ResendOtpRequest;
 import com.dth.fashionshop.modules.identity.dto.request.VerifyOtpRequest;
+import com.dth.fashionshop.modules.identity.dto.response.LoginResponse;
 import com.dth.fashionshop.modules.identity.service.IdentityService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,5 +40,14 @@ public class IdentityController {
     public ResponseEntity<?> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
         identityService.resendOtp(request);
         return ResponseEntity.ok(Map.of("message", "Mã OTP mới đã được gửi! Vui lòng kiểm tra email."));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        // Gọi xuống Service để xử lý và nhận về Hộp kết quả (chứa Token)
+        LoginResponse response = identityService.login(request);
+
+        // Trả về cho Frontend với mã 200 OK
+        return ResponseEntity.ok(response);
     }
 }

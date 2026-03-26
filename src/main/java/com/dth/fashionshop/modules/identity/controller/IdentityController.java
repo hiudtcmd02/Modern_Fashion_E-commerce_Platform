@@ -1,10 +1,8 @@
 package com.dth.fashionshop.modules.identity.controller;
 
-import com.dth.fashionshop.modules.identity.dto.request.LoginRequest;
-import com.dth.fashionshop.modules.identity.dto.request.RegisterRequest;
-import com.dth.fashionshop.modules.identity.dto.request.ResendOtpRequest;
-import com.dth.fashionshop.modules.identity.dto.request.VerifyOtpRequest;
+import com.dth.fashionshop.modules.identity.dto.request.*;
 import com.dth.fashionshop.modules.identity.dto.response.LoginResponse;
+import com.dth.fashionshop.modules.identity.dto.response.VerifyResetOtpResponse;
 import com.dth.fashionshop.modules.identity.service.IdentityService;
 import jakarta.validation.Valid;
 import jakarta.servlet.http.HttpServletRequest;
@@ -64,5 +62,35 @@ public class IdentityController {
         }
 
         return ResponseEntity.badRequest().body("Không tìm thấy Token hợp lệ để đăng xuất!");
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        identityService.forgotPassword(request);
+        return ResponseEntity.ok("Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn!");
+    }
+
+    @PostMapping("/verify-reset-otp")
+    public ResponseEntity<VerifyResetOtpResponse> verifyResetOtp(@Valid @RequestBody VerifyResetOtpRequest request) {
+        VerifyResetOtpResponse response = identityService.verifyResetOtp(request);
+        return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<String> resetPassword(
+            HttpServletRequest httpServletRequest,
+            @Valid @RequestBody ResetPasswordRequest request) {
+
+        // 1. Rút thẻ từ Header
+        String authHeader = httpServletRequest.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Thiếu mã xác thực (Reset Token)!");
+        }
+
+        // 2. Cắt chữ Bearer và truyền xuống Service
+        String token = authHeader.substring(7);
+        identityService.resetPassword(token, request);
+
+        return ResponseEntity.ok("Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.");
     }
 }

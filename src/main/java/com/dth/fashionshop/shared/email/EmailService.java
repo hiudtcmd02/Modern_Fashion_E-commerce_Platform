@@ -16,6 +16,7 @@ public class EmailService {
 
     // Kỹ thuật Bất đồng bộ: Hàm này sẽ chạy ngầm ở một luồng (thread) khác
     // Giúp API trả về kết quả ngay lập tức mà không bắt người dùng chờ 3-5 giây gửi mail
+    // Hàm gửi OTP đăng ký tài khoản
     @Async
     public void sendOtpEmail(String toEmail, String otpCode) {
         try {
@@ -26,9 +27,36 @@ public class EmailService {
             message.setSubject("Mã xác thực đăng ký tài khoản - Modern Fashion Shop");
             message.setText("Chào bạn,\n\n" +
                     "Mã xác thực (OTP) để kích hoạt tài khoản của bạn là: " + otpCode + "\n\n" +
-                    "Mã này sẽ hết hạn sau 5 phút. Vui lòng không chia sẻ mã này cho bất kỳ ai.\n\n" +
+                    "Mã này sẽ hết hạn sau 5 phút. Vui lòng KHÔNG chia sẻ mã này cho bất kỳ ai.\n\n" +
                     "Trân trọng,\n" +
                     "Đội ngũ Modern Fashion Shop.");
+
+            javaMailSender.send(message);
+
+            log.info("Đã gửi Email OTP thành công đến: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi email đến {}: {}", toEmail, e.getMessage());
+        }
+    }
+
+    // Hàm gửi otp cho chức năng quên mật khẩu
+    @Async
+    public void sendForgotPasswordEmail(String toEmail, String otpCode) {
+        try {
+            log.info("Bắt đầu tiến trình gửi Email OTP đến: {}", toEmail);
+
+            String subject = "Yêu cầu đặt lại mật khẩu - Modern Fashion Shop";
+            String text = "Xin chào,\n\n"
+                    + "Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn.\n"
+                    + "Mã OTP để xác thực của bạn là: " + otpCode + "\n\n"
+                    + "Mã này sẽ hết hạn sau 5 phút. Vui lòng KHÔNG chia sẻ mã này cho bất kỳ ai.\n\n"
+                    + "Trân trọng,\n"
+                    + "Đội ngũ Modern Fashion Shop";
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(text);
 
             javaMailSender.send(message);
 

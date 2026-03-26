@@ -90,4 +90,23 @@ public class JwtService {
         byte[] keyBytes = Decoders.BASE64.decode(secretKey);
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
+    // Hàm tạo token cho chức năng quên mật khẩu (token chỉ tồn tại 5 phút)
+    public String generateResetToken(User user) {
+        Map<String, Object> extraClaims = new HashMap<>();
+        extraClaims.put("purpose", "RESET_PASSWORD"); // Đóng dấu mộc đặc biệt
+
+        return Jwts.builder()
+                .setClaims(extraClaims)
+                .setSubject(user.getEmail())
+                .setIssuedAt(new Date(System.currentTimeMillis()))
+                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 5))
+                .signWith(getSignInKey(), SignatureAlgorithm.HS256)
+                .compact();
+    }
+
+    // Hàm này dùng để soi xem Token được cấp với mục đích gì
+    public String extractPurpose(String token) {
+        return extractClaim(token, claims -> claims.get("purpose", String.class));
+    }
 }

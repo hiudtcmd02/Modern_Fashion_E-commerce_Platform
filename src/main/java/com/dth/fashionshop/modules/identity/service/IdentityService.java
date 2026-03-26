@@ -14,4 +14,6 @@ public interface IdentityService {
     void resendOtp(ResendOtpRequest request);
 
     LoginResponse login(LoginRequest request);
+
+    void logout(String token);
 }

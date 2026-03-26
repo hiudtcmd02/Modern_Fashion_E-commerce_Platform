@@ -5,9 +5,11 @@ import com.dth.fashionshop.modules.identity.dto.request.RegisterRequest;
 import com.dth.fashionshop.modules.identity.dto.request.ResendOtpRequest;
 import com.dth.fashionshop.modules.identity.dto.request.VerifyOtpRequest;
 import com.dth.fashionshop.modules.identity.dto.response.LoginResponse;
+import com.dth.fashionshop.modules.identity.entity.InvalidatedToken;
 import com.dth.fashionshop.modules.identity.entity.Role;
 import com.dth.fashionshop.modules.identity.entity.User;
 import com.dth.fashionshop.modules.identity.enums.UserStatus;
+import com.dth.fashionshop.modules.identity.repository.InvalidatedTokenRepository;
 import com.dth.fashionshop.modules.identity.repository.RoleRepository;
 import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.IdentityService;
@@ -27,6 +29,7 @@ import org.springframework.security.core.AuthenticationException;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.Date;
 import java.util.Random;
 
 @Service
@@ -41,6 +44,7 @@ public class IdentityServiceImpl implements IdentityService{
 
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
+    private final InvalidatedTokenRepository invalidatedTokenRepository;
 
     @Override
     @Transactional
@@ -176,6 +180,21 @@ public class IdentityServiceImpl implements IdentityService{
                 .email(user.getEmail())
                 .fullName(user.getFullName())
                 .build();
+    }
+
+    @Override
+    public void logout(String token) {
+        // 1. Lấy ngày hết hạn của token hiện tại
+        Date expirationDate = jwtService.extractExpiration(token);
+
+        // 2. Nhét vào danh sách đen
+        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                .id(token)
+                .expiryTime(expirationDate)
+                .build();
+
+        invalidatedTokenRepository.save(invalidatedToken);
+        log.info("Token đã được đưa vào danh sách đen! Người dùng đăng xuất thành công");
     }
 
     public String generateOtpCode(){

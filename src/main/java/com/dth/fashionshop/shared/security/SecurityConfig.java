@@ -22,6 +22,7 @@ import org.springframework.security.web.SecurityFilterChain;
 public class SecurityConfig {
 
     private final CustomUserDetailsService userDetailsService;
+    private final JwtAuthenticationFilter jwtAuthFilter;
 
     // 1. Cấu hình thuật toán mã hóa mật khẩu
     @Bean
@@ -54,7 +55,8 @@ public class SecurityConfig {
 
                         // Mọi API khác trong hệ thống đều bị khóa, phải có Token mới được vào
                         .anyRequest().authenticated()
-                );
+                )
+                .addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

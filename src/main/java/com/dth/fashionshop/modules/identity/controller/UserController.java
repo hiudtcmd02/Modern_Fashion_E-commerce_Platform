@@ -1,24 +1,36 @@
 package com.dth.fashionshop.modules.identity.controller;
 
+import com.dth.fashionshop.modules.identity.dto.request.UpdateProfileRequest;
+import com.dth.fashionshop.modules.identity.dto.response.UserProfileResponse;
+import com.dth.fashionshop.modules.identity.service.UserService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/v1/users")
+@RequiredArgsConstructor
 public class UserController {
 
-    //API này hiện chỉ để test "thử thẻ" kiểm tra hệ thống đã có thể nhận diện ai đang đăng nhập thành công chưa?
+    private final UserService userService;
+
+    // 1. Lấy thông tin cá nhân
     @GetMapping("/profile")
-    public ResponseEntity<String> getMyProfile() {
-        // Gọi thẳng lên "Loa phát thanh" của Tòa nhà để hỏi xem ai đang đi lại trong này
-        // Không cần truyền Token hay Email gì vào tham số của hàm này cả!
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
+    public ResponseEntity<UserProfileResponse> getMyProfile() {
+        return ResponseEntity.ok(userService.getMyProfile());
+    }
 
-        String thongBao = "Xin chào! Máy quét thẻ hoạt động hoàn hảo. Căn cước của bạn là: " + email;
+    // 2. Cập nhật thông tin chữ (Text)
+    @PutMapping("/profile")
+    public ResponseEntity<UserProfileResponse> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
+        return ResponseEntity.ok(userService.updateProfile(request));
+    }
 
-        return ResponseEntity.ok(thongBao);
+    // 3. Tải lên ảnh đại diện (File)
+    @PostMapping("/profile/avatar")
+    public ResponseEntity<UserProfileResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
+        return ResponseEntity.ok(userService.uploadAvatar(file));
     }
 }

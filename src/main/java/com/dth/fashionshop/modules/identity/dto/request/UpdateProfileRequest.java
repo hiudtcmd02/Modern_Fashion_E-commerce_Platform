@@ -1,6 +1,7 @@
 package com.dth.fashionshop.modules.identity.dto.request;
 
 import com.dth.fashionshop.modules.identity.enums.Gender;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
 import lombok.Data;
@@ -19,5 +20,6 @@ public class UpdateProfileRequest {
 
     private Gender gender;
 
+    @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd")
     private LocalDate dateOfBirth;
 }

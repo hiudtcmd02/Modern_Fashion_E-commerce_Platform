@@ -4,6 +4,7 @@ import com.dth.fashionshop.modules.identity.dto.request.UpdateProfileRequest;
 import com.dth.fashionshop.modules.identity.dto.response.UserProfileResponse;
 import com.dth.fashionshop.modules.identity.entity.User;
 import com.dth.fashionshop.modules.identity.repository.UserRepository;
+import com.dth.fashionshop.modules.identity.service.JwtService;
 import com.dth.fashionshop.modules.identity.service.MediaService;
 import com.dth.fashionshop.modules.identity.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -11,6 +12,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
+import com.dth.fashionshop.modules.identity.dto.request.ChangePasswordRequest;
+import com.dth.fashionshop.modules.identity.entity.InvalidatedToken;
+import com.dth.fashionshop.modules.identity.repository.InvalidatedTokenRepository;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.Objects;
 
@@ -21,6 +26,10 @@ public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
     private final MediaService mediaService;
+
+    private final PasswordEncoder passwordEncoder;
+    private final JwtService jwtService;
+    private final InvalidatedTokenRepository invalidatedTokenRepository;
 
     // Hàm dùng chung: Lấy User đang đăng nhập từ Thẻ JWT
     private User getCurrentAuthenticatedUser() {
@@ -78,5 +87,40 @@ public class UserServiceImpl implements UserService {
 
         // Trả về toàn bộ profile mới nhất để Frontend đồng bộ UI ngay lập tức
         return mapToResponse(updatedUser);
+    }
+
+    @Override
+    public void changePassword(String token, ChangePasswordRequest request) {
+        // 1. Lấy thông tin User đang đăng nhập
+        User user = getCurrentAuthenticatedUser();
+
+        // 2. Kiểm tra (Ngoại lệ 2): Pass mới và Xác nhận có khớp không?
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            throw new RuntimeException("Mật khẩu mới và nhập lại mật khẩu mới không trùng khớp!");
+        }
+
+        // 3. Kiểm tra (Ngoại lệ 1): Pass cũ nhập vào có đúng với DB không?
+        if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu hiện tại không chính xác!");
+        }
+
+        // 4. Kiểm tra (Bổ sung): Pass mới có bị trùng với Pass cũ không?
+        if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+            throw new RuntimeException("Mật khẩu mới phải khác mật khẩu hiện tại!");
+        }
+
+        // 5. Mọi thứ hoàn hảo -> Băm mật khẩu mới và lưu xuống DB
+        user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        userRepository.save(user);
+
+        // 6. Đưa chiếc thẻ (Token) hiện tại vào Sổ Đen!
+        // Như vậy, ngay sau khi đổi pass, thẻ này sẽ biến thành rác, buộc user phải login lại.
+        InvalidatedToken invalidatedToken = InvalidatedToken.builder()
+                .id(token)
+                .expiryTime(jwtService.extractExpiration(token))
+                .build();
+        invalidatedTokenRepository.save(invalidatedToken);
+
+        log.info("Người dùng {} đã đổi mật khẩu thành công và phiên đăng nhập cũ đã bị hủy.", user.getEmail());
     }
 }

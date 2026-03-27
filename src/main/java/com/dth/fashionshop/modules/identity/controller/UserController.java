@@ -1,8 +1,10 @@
 package com.dth.fashionshop.modules.identity.controller;
 
+import com.dth.fashionshop.modules.identity.dto.request.ChangePasswordRequest;
 import com.dth.fashionshop.modules.identity.dto.request.UpdateProfileRequest;
 import com.dth.fashionshop.modules.identity.dto.response.UserProfileResponse;
 import com.dth.fashionshop.modules.identity.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -32,5 +34,24 @@ public class UserController {
     @PostMapping("/profile/avatar")
     public ResponseEntity<UserProfileResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(userService.uploadAvatar(file));
+    }
+
+    // Người dùng đổi mật khẩu trong hồ sơ cá nhân
+    @PutMapping("/profile/password")
+    public ResponseEntity<String> changePassword(
+            HttpServletRequest httpServletRequest,
+            @Valid @RequestBody ChangePasswordRequest request) {
+
+        // Rút thẻ từ Header
+        String authHeader = httpServletRequest.getHeader("Authorization");
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body("Thiếu mã xác thực!");
+        }
+
+        // Cắt chữ Bearer và truyền token xuống Service
+        String token = authHeader.substring(7);
+        userService.changePassword(token, request);
+
+        return ResponseEntity.ok("Đổi mật khẩu thành công. Vui lòng đăng nhập lại!");
     }
 }

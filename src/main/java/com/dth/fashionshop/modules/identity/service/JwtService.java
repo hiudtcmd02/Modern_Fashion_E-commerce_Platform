@@ -1,5 +1,6 @@
 package com.dth.fashionshop.modules.identity.service;
 
+import com.dth.fashionshop.modules.identity.entity.Role;
 import com.dth.fashionshop.modules.identity.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -13,8 +14,10 @@ import org.springframework.stereotype.Service;
 import java.security.Key;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class JwtService {
@@ -32,8 +35,11 @@ public class JwtService {
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
 
-        String role = user.getRoles().iterator().next().getName();
-        claims.put("role", role);
+        List<String> roles = user.getRoles().stream()
+                .map(Role::getName)
+                .collect(Collectors.toList());
+
+        claims.put("roles", roles);
 
         return Jwts.builder()
                 .setClaims(claims)

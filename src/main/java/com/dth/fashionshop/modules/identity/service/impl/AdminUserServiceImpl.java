@@ -13,6 +13,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.stream.Collectors;
 
@@ -53,5 +54,34 @@ public class AdminUserServiceImpl implements AdminUserService {
         // 3. Sự kỳ diệu của Spring Page: Hàm .map() tự động duyệt qua từng User trong danh sách
         // và biến nó thành UserAdminResponse, trong khi vẫn giữ nguyên các thông số phân trang (total, size...)
         return userPage.map(this::mapToResponse);
+    }
+
+    @Override
+    @Transactional
+    public void toggleUserStatus(Long userId) {
+
+        // 1. Tìm người dùng trong DB
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng này!"));
+
+        // 2. CHỐT CHẶN 5.1: Quét Radar xem người này có phải là Admin không?
+        boolean isTargetAdmin = user.getRoles().stream()
+                .anyMatch(role -> role.getName().contains("ROLE_ADMIN"));
+
+        if (isTargetAdmin) {
+            throw new RuntimeException("Hành động bị từ chối: Không được phép khóa tài khoản của Quản trị viên khác!");
+        }
+
+        // 3. Thực hiện Đảo trạng thái (Toggle)
+        if (user.getStatus() == UserStatus.LOCKED) {
+            user.setStatus(UserStatus.ACTIVE);
+            log.info("Admin đã MỞ KHÓA cho tài khoản: {}", user.getEmail());
+        } else {
+            user.setStatus(UserStatus.LOCKED);
+            log.info("Admin đã KHÓA tài khoản: {}", user.getEmail());
+        }
+
+        // 4. Lưu lại sự thay đổi
+        userRepository.save(user);
     }
 }

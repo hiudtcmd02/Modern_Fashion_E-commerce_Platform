@@ -16,9 +16,9 @@ public class AdminUserController {
 
     private final AdminUserService adminUserService;
 
-    // 1. Lấy danh sách người dùng (Tìm kiếm, Lọc, Phân trang)
+    // Lấy danh sách người dùng (Tìm kiếm, Lọc, Phân trang)
     @GetMapping
-    @PreAuthorize("hasAuthority('ROLE_ADMIN')") // 🛡️ KHIÊN BẢO VỆ: Chỉ có Role ADMIN mới được gọi API này
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
     public ResponseEntity<Page<UserAdminResponse>> getAllUsers(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UserStatus status,
@@ -31,5 +31,15 @@ public class AdminUserController {
         int pageNumber = page > 0 ? page - 1 : 0;
 
         return ResponseEntity.ok(adminUserService.getAllUsers(keyword, status, pageNumber, size));
+    }
+
+    // Khóa / Mở khóa tài khoản
+    @PutMapping("/{id}/toggle-status")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<String> toggleUserStatus(@PathVariable Long id) {
+
+        adminUserService.toggleUserStatus(id);
+
+        return ResponseEntity.ok("Cập nhật trạng thái tài khoản thành công!");
     }
 }

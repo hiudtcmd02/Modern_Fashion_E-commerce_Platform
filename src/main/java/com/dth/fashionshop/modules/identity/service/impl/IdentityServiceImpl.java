@@ -205,7 +205,7 @@ public class IdentityServiceImpl implements IdentityService{
 
         // 2. Chặn những tài khoản đang bị khóa (LOCKED) và chưa xác thực (INACTIVE)
         if (user.getStatus() == UserStatus.LOCKED) {
-            throw new RuntimeException("Tài khoản của bạn đang bị khóa, không thể cấp lại mật khẩu!");
+            throw new RuntimeException("Tài khoản của bạn đang bị khóa, không thể cấp lại mật khẩu. Vui lòng liên hệ Admin!");
         }
 
         if (user.getStatus() == UserStatus.INACTIVE) {
@@ -246,7 +246,7 @@ public class IdentityServiceImpl implements IdentityService{
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
 
         if (user.getStatus() == UserStatus.LOCKED) {
-            throw new RuntimeException("Tài khoản của bạn đã bị khóa!");
+            throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Admin!");
         }
 
         if (user.getStatus() == UserStatus.INACTIVE) {
@@ -269,7 +269,7 @@ public class IdentityServiceImpl implements IdentityService{
                 user.setStatus(UserStatus.LOCKED);
                 user.setOtpCode(null); // Xóa OTP để không cho dò tiếp
                 userRepository.save(user);
-                throw new RuntimeException("Bạn đã nhập sai OTP 5 lần. Tài khoản đã bị khóa để bảo mật!");
+                throw new RuntimeException("Bạn đã nhập sai OTP 5 lần. Tài khoản đã bị khóa để bảo mật. Vui lòng liên hệ Admin để mở khóa!");
             }
 
             userRepository.save(user);

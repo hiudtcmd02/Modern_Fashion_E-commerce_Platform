@@ -2,6 +2,7 @@ package com.dth.fashionshop.shared.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -40,5 +41,15 @@ public class GlobalExceptionHandler {
         response.put("message", ex.getMessage());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    // Bắt chính xác lỗi sai Role (Bị @PreAuthorize chặn)
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex) {
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", HttpStatus.FORBIDDEN.value());
+        response.put("message", "Access Denied: Bạn không có quyền truy cập tài nguyên này!");
+
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
     }
 }

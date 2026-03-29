@@ -20,4 +20,6 @@ public interface IdentityService {
     VerifyResetOtpResponse verifyResetOtp(VerifyResetOtpRequest request);
 
     void resetPassword(String token, ResetPasswordRequest request);
+
+    boolean isTokenInvalidated(String token);
 }

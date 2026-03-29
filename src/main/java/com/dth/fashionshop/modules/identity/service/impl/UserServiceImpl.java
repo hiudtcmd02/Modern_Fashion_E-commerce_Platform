@@ -3,6 +3,7 @@ package com.dth.fashionshop.modules.identity.service.impl;
 import com.dth.fashionshop.modules.identity.dto.request.UpdateProfileRequest;
 import com.dth.fashionshop.modules.identity.dto.response.UserProfileResponse;
 import com.dth.fashionshop.modules.identity.entity.User;
+import com.dth.fashionshop.modules.identity.enums.UserStatus;
 import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.JwtService;
 import com.dth.fashionshop.modules.identity.service.MediaService;
@@ -122,5 +123,12 @@ public class UserServiceImpl implements UserService {
         invalidatedTokenRepository.save(invalidatedToken);
 
         log.info("Người dùng {} đã đổi mật khẩu thành công và phiên đăng nhập cũ đã bị hủy.", user.getEmail());
+    }
+
+    @Override
+    public boolean isUserLocked(String email) {
+        return userRepository.findByEmail(email)
+                .map(user -> user.getStatus() == UserStatus.LOCKED)
+                .orElse(false); // Nếu không tìm thấy user, mặc định trả về false để logic đằng sau tự xử lý
     }
 }

@@ -323,6 +323,11 @@ public class IdentityServiceImpl implements IdentityService{
         log.info("Đã đổi mật khẩu thành công và thu hồi Reset Token cho email: {}", email);
     }
 
+    @Override
+    public boolean isTokenInvalidated(String token) {
+        return invalidatedTokenRepository.existsById(token);
+    }
+
     public String generateOtpCode(){
         Random random = new Random();
         int otp = 100000 + random.nextInt(900000);

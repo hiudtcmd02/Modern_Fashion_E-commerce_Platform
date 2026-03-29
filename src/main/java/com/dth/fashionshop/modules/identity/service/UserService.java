@@ -13,4 +13,6 @@ public interface UserService {
     UserProfileResponse uploadAvatar(MultipartFile file);
 
     void changePassword(String token, ChangePasswordRequest request);
+
+    boolean isUserLocked(String email);
 }

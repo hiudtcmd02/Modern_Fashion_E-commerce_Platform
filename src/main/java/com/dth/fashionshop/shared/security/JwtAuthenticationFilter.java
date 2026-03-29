@@ -1,13 +1,14 @@
 package com.dth.fashionshop.shared.security;
 
-import com.dth.fashionshop.modules.identity.repository.InvalidatedTokenRepository;
 import com.dth.fashionshop.modules.identity.service.CustomUserDetailsService;
+import com.dth.fashionshop.modules.identity.service.IdentityService;
 import com.dth.fashionshop.modules.identity.service.JwtService;
+import com.dth.fashionshop.modules.identity.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.lang.NonNull;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -19,12 +20,23 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 
 @Component
-@RequiredArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
     private final CustomUserDetailsService userDetailsService;
-    private final InvalidatedTokenRepository invalidatedTokenRepository;
+    private final IdentityService identityService;
+    private final UserService userService;
+
+    public JwtAuthenticationFilter(
+            JwtService jwtService,
+            CustomUserDetailsService userDetailsService,
+            @Lazy IdentityService identityService,
+            @Lazy UserService userService) {
+        this.jwtService = jwtService;
+        this.userDetailsService = userDetailsService;
+        this.identityService = identityService;
+        this.userService = userService;
+    }
 
     @Override
     protected void doFilterInternal(
@@ -49,7 +61,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         jwt = authHeader.substring(7);
 
         // Kiểm tra xem thẻ này có nằm trong Danh sách đen không?
-        if (invalidatedTokenRepository.existsById(jwt)) {
+        if (identityService.isTokenInvalidated(jwt)) {
             // Thẻ đã bị hủy! Ngưng phục vụ, đuổi ra cổng!
             filterChain.doFilter(request, response);
             return;
@@ -60,6 +72,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         // 5. Nếu có Email và hệ thống chưa ghi nhận người này đang đăng nhập
         if (userEmail != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+            // Truy vấn vào DB kiểm tra xem người dùng có đang bị khóa không
+            if (userService.isUserLocked(userEmail)) {
+                // Nếu bị khóa, ném ngay mã 401 (Unauthorized) và cắt đứt luồng chạy!
+                logger.warn("Phát hiện tài khoản bị khóa đang cố truy cập: " + userEmail);
+                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Tài khoản của bạn đã bị khóa bởi Quản trị viên!");
+                return; // Dừng ngay lập tức, không cho đi tiếp vào FilterChain
+            }
 
             // Lấy hồ sơ của người này từ Database lên
             UserDetails userDetails = this.userDetailsService.loadUserByUsername(userEmail);

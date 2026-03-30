@@ -32,14 +32,12 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
     private final InvalidatedTokenRepository invalidatedTokenRepository;
 
-    // Hàm dùng chung: Lấy User đang đăng nhập từ Thẻ JWT
     private User getCurrentAuthenticatedUser() {
         String email = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin tài khoản!"));
     }
 
-    // Hàm chuyển Entity thành DTO
     private UserProfileResponse mapToResponse(User user) {
         return UserProfileResponse.builder()
                 .email(user.getEmail())
@@ -61,7 +59,6 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse updateProfile(UpdateProfileRequest request) {
         User user = getCurrentAuthenticatedUser();
 
-        // Cập nhật các trường được phép
         user.setFullName(request.getFullName());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setGender(request.getGender());
@@ -77,45 +74,36 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse uploadAvatar(MultipartFile file) {
         User user = getCurrentAuthenticatedUser();
 
-        // 1. Nhờ MediaService đẩy ảnh lên Cloudinary
         String avatarUrl = mediaService.uploadAvatar(file);
 
-        // 2. Lưu Link ảnh vào Database
         user.setAvatarUrl(avatarUrl);
         User updatedUser = userRepository.save(user);
 
         log.info("Người dùng {} đã cập nhật ảnh đại diện", user.getEmail());
 
-        // Trả về toàn bộ profile mới nhất để Frontend đồng bộ UI ngay lập tức
         return mapToResponse(updatedUser);
     }
 
     @Override
     public void changePassword(String token, ChangePasswordRequest request) {
-        // 1. Lấy thông tin User đang đăng nhập
+
         User user = getCurrentAuthenticatedUser();
 
-        // 2. Kiểm tra (Ngoại lệ 2): Pass mới và Xác nhận có khớp không?
         if (!request.getNewPassword().equals(request.getConfirmPassword())) {
             throw new RuntimeException("Mật khẩu mới và nhập lại mật khẩu mới không trùng khớp!");
         }
 
-        // 3. Kiểm tra (Ngoại lệ 1): Pass cũ nhập vào có đúng với DB không?
         if (!passwordEncoder.matches(request.getOldPassword(), user.getPassword())) {
             throw new RuntimeException("Mật khẩu hiện tại không chính xác!");
         }
 
-        // 4. Kiểm tra (Bổ sung): Pass mới có bị trùng với Pass cũ không?
         if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
             throw new RuntimeException("Mật khẩu mới phải khác mật khẩu hiện tại!");
         }
 
-        // 5. Mọi thứ hoàn hảo -> Băm mật khẩu mới và lưu xuống DB
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        // 6. Đưa chiếc thẻ (Token) hiện tại vào Sổ Đen!
-        // Như vậy, ngay sau khi đổi pass, thẻ này sẽ biến thành rác, buộc user phải login lại.
         InvalidatedToken invalidatedToken = InvalidatedToken.builder()
                 .id(token)
                 .expiryTime(jwtService.extractExpiration(token))
@@ -129,6 +117,6 @@ public class UserServiceImpl implements UserService {
     public boolean isUserLocked(String email) {
         return userRepository.findByEmail(email)
                 .map(user -> user.getStatus() == UserStatus.LOCKED)
-                .orElse(false); // Nếu không tìm thấy user, mặc định trả về false để logic đằng sau tự xử lý
+                .orElse(false);
     }
 }

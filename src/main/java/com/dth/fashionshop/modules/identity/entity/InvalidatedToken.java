@@ -16,7 +16,7 @@ import java.util.Date;
 @AllArgsConstructor
 public class InvalidatedToken {
     @Id
-    private String id; // Chúng ta sẽ lưu nguyên cái chuỗi Token "eyJ..." làm Khóa chính luôn
+    private String id;
 
-    private Date expiryTime; // Lưu thời gian hết hạn của thẻ
+    private Date expiryTime;
 }

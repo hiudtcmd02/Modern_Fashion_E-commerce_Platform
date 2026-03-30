@@ -43,20 +43,19 @@ public class IdentityController {
 
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        // Gọi xuống Service để xử lý và nhận về Hộp kết quả (chứa Token)
+
         LoginResponse response = identityService.login(request);
 
-        // Trả về cho Frontend với mã 200 OK
         return ResponseEntity.ok(response);
     }
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
-        // Rút thẻ từ Header ra
+
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7); // Cắt bỏ chữ Bearer
+            String token = authHeader.substring(7);
             identityService.logout(token);
             return ResponseEntity.ok("Đăng xuất thành công!");
         }
@@ -81,13 +80,11 @@ public class IdentityController {
             HttpServletRequest httpServletRequest,
             @Valid @RequestBody ResetPasswordRequest request) {
 
-        // 1. Rút thẻ từ Header
         String authHeader = httpServletRequest.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.badRequest().body("Thiếu mã xác thực (Reset Token)!");
         }
 
-        // 2. Cắt chữ Bearer và truyền xuống Service
         String token = authHeader.substring(7);
         identityService.resetPassword(token, request);
 

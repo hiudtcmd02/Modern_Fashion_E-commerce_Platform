@@ -42,7 +42,6 @@ public class Address {
     @Builder.Default
     private Boolean isDefault = false;
 
-    // Cờ đánh dấu Xóa mềm (Tuyệt đối không dùng lệnh DELETE trong SQL)
     @Column(name = "is_deleted")
     @Builder.Default
     private Boolean isDeleted = false;

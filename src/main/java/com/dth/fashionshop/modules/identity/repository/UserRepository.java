@@ -16,12 +16,10 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
-    // SELECT count(*) FROM users WHERE email = ?
     boolean existsByEmail(String email);
 
     boolean existsByPhoneNumber(String phoneNumber);
 
-    // BỔ SUNG "SIÊU VŨ KHÍ" TÌM KIẾM CHO ADMIN
     @Query("SELECT u FROM User u WHERE " +
             "(:keyword IS NULL OR :keyword = '' " +
             "   OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +

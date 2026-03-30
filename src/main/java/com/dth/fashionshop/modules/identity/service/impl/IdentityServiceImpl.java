@@ -112,18 +112,14 @@ public class IdentityServiceImpl implements IdentityService{
     public void resendOtp(ResendOtpRequest request) {
         log.info("Yêu cầu gửi lại OTP cho email: {}", request.getEmail());
 
-        // 1. Tìm User trong Database
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này!"));
 
-        // 2. Chặn nếu tài khoản đã kích hoạt
         if (user.getStatus() == UserStatus.ACTIVE) {
             throw new RuntimeException("Tài khoản này đã được kích hoạt! Vui lòng đăng nhập.");
         }
 
-        // 3. THUẬT TOÁN CHỐNG SPAM (Cooldown 60 giây)
         if (user.getLastOtpSentAt() != null) {
-            // Tính số giây trôi qua kể từ lần gửi cuối cùng
             long secondsSinceLastSent = ChronoUnit.SECONDS.between(user.getLastOtpSentAt(), LocalDateTime.now());
 
             if (secondsSinceLastSent < 60) {
@@ -132,13 +128,11 @@ public class IdentityServiceImpl implements IdentityService{
             }
         }
 
-        // 4. Sinh mã OTP mới, gia hạn thêm 5 phút và cập nhật lại thời điểm gửi
         String newOtpCode = generateOtpCode();
         user.setOtpCode(newOtpCode);
         user.setOtpExpiryTime(LocalDateTime.now().plusMinutes(5));
-        user.setLastOtpSentAt(LocalDateTime.now()); // <--- Cập nhật lại cột này bằng giờ hiện tại
+        user.setLastOtpSentAt(LocalDateTime.now());
 
-        // 5. Lưu DB và Bắn luồng gửi Email
         userRepository.save(user);
         emailService.sendOtpEmail(user.getEmail(), newOtpCode);
 
@@ -149,7 +143,7 @@ public class IdentityServiceImpl implements IdentityService{
     public LoginResponse login(LoginRequest request) {
         log.info("Tiến hành xác thực đăng nhập cho email: {}", request.getEmail());
 
-        try { // 1. Giao toàn quyền cho Giám đốc An ninh (Kiểm tra cả Mật khẩu lẫn trạng thái ACTIVE)
+        try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword())
             );
@@ -163,16 +157,12 @@ public class IdentityServiceImpl implements IdentityService{
             throw new RuntimeException("Đăng nhập thất bại, vui lòng thử lại!");
         }
 
-        // 2. Nếu code chạy được xuống đây, chắc chắn 100% tài khoản hợp lệ, mật khẩu ĐÚNG và đã ACTIVE.
-        // Chỉ cần lấy User lên để đúc thẻ JWT (Không cần if-else kiểm tra status thủ công nữa!!!)
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
 
-        // 3. Mọi thứ hoàn hảo -> Nhờ Máy đúc thẻ tạo JWT
         String jwtToken = jwtService.generateToken(user);
         log.info("Đăng nhập thành công, đã cấp Token cho: {}", user.getEmail());
 
-        // 4. Đóng gói trả về cho Frontend
         return LoginResponse.builder()
                 .accessToken(jwtToken)
                 .email(user.getEmail())
@@ -182,10 +172,9 @@ public class IdentityServiceImpl implements IdentityService{
 
     @Override
     public void logout(String token) {
-        // 1. Lấy ngày hết hạn của token hiện tại
+
         Date expirationDate = jwtService.extractExpiration(token);
 
-        // 2. Nhét vào danh sách đen
         InvalidatedToken invalidatedToken = InvalidatedToken.builder()
                 .id(token)
                 .expiryTime(expirationDate)
@@ -199,11 +188,9 @@ public class IdentityServiceImpl implements IdentityService{
     public void forgotPassword(ForgotPasswordRequest request) {
         log.info("Xử lý yêu cầu quên mật khẩu cho email: {}", request.getEmail());
 
-        // 1. Tìm user trong Database
         User user = userRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy email trong hệ thống"));
 
-        // 2. Chặn những tài khoản đang bị khóa (LOCKED) và chưa xác thực (INACTIVE)
         if (user.getStatus() == UserStatus.LOCKED) {
             throw new RuntimeException("Tài khoản của bạn đang bị khóa, không thể cấp lại mật khẩu. Vui lòng liên hệ Admin!");
         }
@@ -212,9 +199,7 @@ public class IdentityServiceImpl implements IdentityService{
             throw new RuntimeException("Tài khoản của bạn chưa được xác thực email! Vui lòng xác thực email!");
         }
 
-        // CHỐT CHẶN CHỐNG SPAM (1 PHÚT)
         if (user.getLastOtpSentAt() != null) {
-            // Tính số giây trôi qua kể từ lần gửi cuối cùng
             long secondsSinceLastSent = ChronoUnit.SECONDS.between(user.getLastOtpSentAt(), LocalDateTime.now());
 
             if (secondsSinceLastSent < 60) {
@@ -223,16 +208,13 @@ public class IdentityServiceImpl implements IdentityService{
             }
         }
 
-        // 3. Sinh mã OTP mới
         String otpCode = generateOtpCode();
 
-        // 4. Lưu OTP, Cập nhật thời gian hết hạn và thời gian lần cuối gửi OTP
         user.setOtpCode(otpCode);
         user.setOtpExpiryTime(LocalDateTime.now().plusMinutes(5));
         user.setLastOtpSentAt(LocalDateTime.now());
         userRepository.save(user);
 
-        // 5. Gọi cỗ máy gửi Email
         emailService.sendForgotPasswordEmail(user.getEmail(), otpCode);
 
         log.info("Đã gửi mã OTP khôi phục mật khẩu tới email: {}", request.getEmail());
@@ -253,21 +235,17 @@ public class IdentityServiceImpl implements IdentityService{
             throw new RuntimeException("Tài khoản của bạn chưa được xác thực!");
         }
 
-        // 1. Kiểm tra xem OTP có bị quá hạn không (Quá 5 phút)
         if (user.getOtpExpiryTime() == null || user.getOtpExpiryTime().isBefore(LocalDateTime.now())) {
             throw new RuntimeException("Mã OTP đã hết hạn. Vui lòng yêu cầu mã mới!");
         }
 
-        // 2. Kiểm tra xem OTP nhập vào có ĐÚNG không
         if (!user.getOtpCode().equals(request.getOtp())) {
-            // NẾU SAI: Tăng biến đếm lên 1
             int failedAttempts = (user.getOtpFailedAttempts() == null ? 0 : user.getOtpFailedAttempts()) + 1;
             user.setOtpFailedAttempts(failedAttempts);
 
-            // Nếu sai đủ 5 lần -> Rút thẻ đỏ, khóa tài khoản!
             if (failedAttempts >= 5) {
                 user.setStatus(UserStatus.LOCKED);
-                user.setOtpCode(null); // Xóa OTP để không cho dò tiếp
+                user.setOtpCode(null);
                 userRepository.save(user);
                 throw new RuntimeException("Bạn đã nhập sai OTP 5 lần. Tài khoản đã bị khóa để bảo mật. Vui lòng liên hệ Admin để mở khóa!");
             }
@@ -276,13 +254,11 @@ public class IdentityServiceImpl implements IdentityService{
             throw new RuntimeException("Mã OTP không chính xác! Bạn còn " + (5 - failedAttempts) + " lần thử.");
         }
 
-        // 3. NẾU ĐÚNG: Xóa án tích (Reset số lần sai) và Xóa OTP
         user.setOtpFailedAttempts(0);
         user.setOtpCode(null);
         user.setOtpExpiryTime(null);
         userRepository.save(user);
 
-        // 4. Mọi thứ hoàn hảo -> Đúc chiếc "Thẻ Sửa Chữa"
         String resetToken = jwtService.generateResetToken(user);
 
         return VerifyResetOtpResponse.builder()
@@ -293,27 +269,23 @@ public class IdentityServiceImpl implements IdentityService{
 
     @Override
     public void resetPassword(String token, ResetPasswordRequest request) {
-        // CHỐT CHẶN BỔ SUNG: Kiểm tra xem thẻ này đã bị thu hồi chưa!
+
         if (invalidatedTokenRepository.existsById(token)) {
             throw new RuntimeException("Token khôi phục này đã được sử dụng hoặc không còn hợp lệ!");
         }
 
-        // 1. Kiểm tra con dấu: Tuyệt đối không cho dùng Access Token để đổi mật khẩu!
         String purpose = jwtService.extractPurpose(token);
         if (!"RESET_PASSWORD".equals(purpose)) {
             throw new RuntimeException("Token không hợp lệ! Vui lòng thực hiện lại luồng Quên mật khẩu.");
         }
 
-        // 2. Giải mã lấy Email và tìm người dùng
         String email = jwtService.extractEmail(token);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
 
-        // 3. Mã hóa Mật khẩu mới và lưu xuống DB
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
 
-        // 4. HỦY THẺ NGAY LẬP TỨC (Cho vào Danh sách đen) đảm bảo thẻ Reset chỉ được dùng ĐÚNG 1 LẦN!
         InvalidatedToken invalidatedToken = InvalidatedToken.builder()
                 .id(token)
                 .expiryTime(jwtService.extractExpiration(token))

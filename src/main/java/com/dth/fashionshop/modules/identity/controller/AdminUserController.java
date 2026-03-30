@@ -1,6 +1,7 @@
 package com.dth.fashionshop.modules.identity.controller;
 
 import com.dth.fashionshop.modules.identity.dto.response.UserAdminResponse;
+import com.dth.fashionshop.modules.identity.dto.response.UserDetailAdminResponse;
 import com.dth.fashionshop.modules.identity.enums.UserStatus;
 import com.dth.fashionshop.modules.identity.service.AdminUserService;
 import lombok.RequiredArgsConstructor;
@@ -22,12 +23,10 @@ public class AdminUserController {
     public ResponseEntity<Page<UserAdminResponse>> getAllUsers(
             @RequestParam(required = false) String keyword,
             @RequestParam(required = false) UserStatus status,
-            @RequestParam(defaultValue = "1") int page, // Frontend thường truyền trang 1, 2, 3...
-            @RequestParam(defaultValue = "10") int size // Số dòng trên 1 trang
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size
     ) {
 
-        // Frontend đếm trang từ 1, nhưng Spring Boot (JPA) đếm từ 0.
-        // Cú chuyển đổi này giúp cả 2 bên nói chung một ngôn ngữ.
         int pageNumber = page > 0 ? page - 1 : 0;
 
         return ResponseEntity.ok(adminUserService.getAllUsers(keyword, status, pageNumber, size));
@@ -41,5 +40,13 @@ public class AdminUserController {
         adminUserService.toggleUserStatus(id);
 
         return ResponseEntity.ok("Cập nhật trạng thái tài khoản thành công!");
+    }
+
+    // Lấy thông tin chi tiết người dùng (Customer 360 View)
+    @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('ROLE_ADMIN')")
+    public ResponseEntity<UserDetailAdminResponse> getUserDetail(@PathVariable Long id) {
+
+        return ResponseEntity.ok(adminUserService.getUserDetailById(id));
     }
 }

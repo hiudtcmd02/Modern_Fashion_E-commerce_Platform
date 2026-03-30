@@ -35,6 +35,6 @@ build/
 # Secrets
 .env
 
-# Bỏ qua thư mục chứa file log
+# Log folder
 logs/
 *.log

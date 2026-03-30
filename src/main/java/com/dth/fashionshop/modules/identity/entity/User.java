@@ -60,7 +60,6 @@ public class User {
     @Column(name = "last_otp_sent_at")
     private LocalDateTime lastOtpSentAt;
 
-    // Đếm số lần nhập sai OTP (Mặc định là 0)
     @Column(name = "otp_failed_attempts")
     private Integer otpFailedAttempts = 0;
 

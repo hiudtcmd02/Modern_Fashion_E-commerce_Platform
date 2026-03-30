@@ -15,10 +15,6 @@ public class TokenCleanupService {
 
     private final InvalidatedTokenRepository invalidatedTokenRepository;
 
-    /**
-     * "0 0 2 * * *" nghĩa là:
-     * 0 giây, 0 phút, 2 giờ sáng, Mọi ngày, Mọi tháng, Mọi thứ trong tuần
-     */
     @Scheduled(cron = "0 0 2 * * *")
     public void cleanupExpiredTokens() {
         log.info("[CRON JOB] Bắt đầu dọn dẹp các Token hết hạn trong Blacklist...");

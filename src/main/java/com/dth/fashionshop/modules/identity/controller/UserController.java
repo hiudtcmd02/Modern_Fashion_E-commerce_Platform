@@ -18,19 +18,19 @@ public class UserController {
 
     private final UserService userService;
 
-    // 1. Lấy thông tin cá nhân
+    // Lấy thông tin cá nhân
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getMyProfile() {
         return ResponseEntity.ok(userService.getMyProfile());
     }
 
-    // 2. Cập nhật thông tin chữ (Text)
+    // Cập nhật thông tin chữ (Text)
     @PutMapping("/profile")
     public ResponseEntity<UserProfileResponse> updateProfile(@Valid @RequestBody UpdateProfileRequest request) {
         return ResponseEntity.ok(userService.updateProfile(request));
     }
 
-    // 3. Tải lên ảnh đại diện (File)
+    // Tải lên ảnh đại diện
     @PostMapping("/profile/avatar")
     public ResponseEntity<UserProfileResponse> uploadAvatar(@RequestParam("file") MultipartFile file) {
         return ResponseEntity.ok(userService.uploadAvatar(file));
@@ -42,13 +42,11 @@ public class UserController {
             HttpServletRequest httpServletRequest,
             @Valid @RequestBody ChangePasswordRequest request) {
 
-        // Rút thẻ từ Header
         String authHeader = httpServletRequest.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             return ResponseEntity.badRequest().body("Thiếu mã xác thực!");
         }
 
-        // Cắt chữ Bearer và truyền token xuống Service
         String token = authHeader.substring(7);
         userService.changePassword(token, request);
 

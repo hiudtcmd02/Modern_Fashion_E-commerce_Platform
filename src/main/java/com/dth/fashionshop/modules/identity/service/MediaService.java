@@ -20,20 +20,16 @@ public class MediaService {
 
     public String uploadAvatar(MultipartFile file) {
         try {
-            // 1. Tạo tên file ngẫu nhiên để không bị trùng lặp
             String publicId = "avatar_" + UUID.randomUUID().toString();
 
-            // 2. Cấu hình các tham số đẩy lên Cloudinary
             Map<String, Object> uploadParams = ObjectUtils.asMap(
-                    "folder", "fashionshop/avatars", // Tự động tạo thư mục này trên Cloudinary
-                    "public_id", publicId,           // Tên file
-                    "resource_type", "image"         // Chỉ nhận ảnh
+                    "folder", "fashionshop/avatars",
+                    "public_id", publicId,
+                    "resource_type", "image"
             );
 
-            // 3. Thực hiện đẩy file (getBytes) lên mây
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
 
-            // 4. Lấy cái Link ảnh an toàn (https) trả về
             String imageUrl = uploadResult.get("secure_url").toString();
             log.info("Đã upload thành công avatar lên Cloudinary: {}", imageUrl);
 

@@ -18,20 +18,20 @@ public class AddressController {
 
     private final AddressService addressService;
 
-    // 1. Thêm địa chỉ mới
+    // Thêm địa chỉ mới
     @PostMapping
     public ResponseEntity<AddressResponse> createAddress(@Valid @RequestBody AddressRequest request) {
-        // Trả về mã 201 CREATED để chuẩn syntax RESTful khi tạo mới tài nguyên
+
         return ResponseEntity.status(HttpStatus.CREATED).body(addressService.createAddress(request));
     }
 
-    // 2. Lấy danh sách sổ địa chỉ (GET)
+    // Lấy danh sách sổ địa chỉ
     @GetMapping
     public ResponseEntity<List<AddressResponse>> getMyAddresses() {
         return ResponseEntity.ok(addressService.getMyAddresses());
     }
 
-    // 3. Cập nhật địa chỉ (PUT)
+    // Cập nhật địa chỉ
     @PutMapping("/{id}")
     public ResponseEntity<AddressResponse> updateAddress(
             @PathVariable Long id,
@@ -39,14 +39,14 @@ public class AddressController {
         return ResponseEntity.ok(addressService.updateAddress(id, request));
     }
 
-    // 4. Xóa mềm địa chỉ (DELETE)
+    // Xóa địa chỉ
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteAddress(@PathVariable Long id) {
         addressService.deleteAddress(id);
         return ResponseEntity.ok("Xóa địa chỉ thành công!");
     }
 
-    // 5. Lấy thông tin một địa chỉ cụ thể (GET)
+    // Lấy thông tin một địa chỉ cụ thể
     @GetMapping("/{id}")
     public ResponseEntity<AddressResponse> getAddressById(@PathVariable Long id) {
         return ResponseEntity.ok(addressService.getAddressById(id));

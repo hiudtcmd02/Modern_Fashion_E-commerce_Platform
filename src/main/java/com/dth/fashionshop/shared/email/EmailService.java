@@ -9,14 +9,12 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j // Dùng để in log ra console
+@Slf4j
 public class EmailService {
 
     private final JavaMailSender javaMailSender;
 
-    // Kỹ thuật Bất đồng bộ: Hàm này sẽ chạy ngầm ở một luồng (thread) khác
-    // Giúp API trả về kết quả ngay lập tức mà không bắt người dùng chờ 3-5 giây gửi mail
-    // Hàm gửi OTP đăng ký tài khoản
+    // Hàm gửi OTP cho chức năng đăng ký tài khoản
     @Async
     public void sendOtpEmail(String toEmail, String otpCode) {
         try {

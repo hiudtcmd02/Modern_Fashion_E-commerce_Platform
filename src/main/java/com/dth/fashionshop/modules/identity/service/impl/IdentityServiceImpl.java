@@ -295,6 +295,7 @@ public class IdentityServiceImpl implements IdentityService{
         log.info("Đã đổi mật khẩu thành công và thu hồi Reset Token cho email: {}", email);
     }
 
+    // Hàm kiểm tra xem token có nằm trong blacklist không
     @Override
     public boolean isTokenInvalidated(String token) {
         return invalidatedTokenRepository.existsById(token);

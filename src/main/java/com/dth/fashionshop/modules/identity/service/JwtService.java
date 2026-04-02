@@ -50,6 +50,7 @@ public class JwtService {
         return extractClaim(token, Claims::getSubject);
     }
 
+    //Phương thức kiểm tra token có đúng là của người dùng và còn hạn không
     public boolean isTokenValid(String token, UserDetails userDetails) {
 
         final String email = extractEmail(token);
@@ -57,6 +58,7 @@ public class JwtService {
         return (email.equals(userDetails.getUsername())) && !isTokenExpired(token);
     }
 
+    //Phương thức kiểm tra token hết hạn chưa
     private boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
     }
@@ -96,6 +98,7 @@ public class JwtService {
                 .compact();
     }
 
+    // Phương thức lấy ra mục đích của token
     public String extractPurpose(String token) {
         return extractClaim(token, claims -> claims.get("purpose", String.class));
     }

@@ -20,6 +20,7 @@ public class IdentityController {
 
     private final IdentityService identityService;
 
+    // Đăng ký và gửi mã OTP
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request){
         identityService.register(request);
@@ -28,6 +29,7 @@ public class IdentityController {
                 .body(Map.of("message", "Đăng ký thành công! Vui lòng kiểm tra email để lấy mã OTP."));
     }
 
+    // Xác thực OTP đăng ký và kích hoạt tài khoản
     @PostMapping("/verify-otp")
     public ResponseEntity<?> verifyOtp(@Valid @RequestBody VerifyOtpRequest request){
         identityService.verifyOtp(request);
@@ -35,12 +37,14 @@ public class IdentityController {
         return ResponseEntity.ok(Map.of("message", "Xác thực OTP thành công! Tài khoản đã được kích hoạt."));
     }
 
+    // Yêu cầu cấp lại OTP xác thực đăng ký
     @PostMapping("/resend-otp")
     public ResponseEntity<?> resendOtp(@Valid @RequestBody ResendOtpRequest request) {
         identityService.resendOtp(request);
         return ResponseEntity.ok(Map.of("message", "Mã OTP mới đã được gửi! Vui lòng kiểm tra email."));
     }
 
+    // Đăng nhập
     @PostMapping("/login")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
 
@@ -49,6 +53,7 @@ public class IdentityController {
         return ResponseEntity.ok(response);
     }
 
+    // Đăng xuất
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request) {
 
@@ -63,18 +68,21 @@ public class IdentityController {
         return ResponseEntity.badRequest().body("Không tìm thấy Token hợp lệ để đăng xuất!");
     }
 
+    // Quên mật khẩu và yêu cầu cấp OTP xác thực để khôi phục mật khẩu mới (dùng cho cả yêu cầu cấp lại OTP)
     @PostMapping("/forgot-password")
     public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         identityService.forgotPassword(request);
         return ResponseEntity.ok("Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn!");
     }
 
+    // Xác thực OTP quên mật khẩu
     @PostMapping("/verify-reset-otp")
     public ResponseEntity<VerifyResetOtpResponse> verifyResetOtp(@Valid @RequestBody VerifyResetOtpRequest request) {
         VerifyResetOtpResponse response = identityService.verifyResetOtp(request);
         return ResponseEntity.ok(response);
     }
 
+    // Đổi mật khẩu sau khi đã xác thực OTP quên mật khẩu
     @PostMapping("/reset-password")
     public ResponseEntity<String> resetPassword(
             HttpServletRequest httpServletRequest,

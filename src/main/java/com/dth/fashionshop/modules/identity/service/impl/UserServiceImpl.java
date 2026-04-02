@@ -6,7 +6,7 @@ import com.dth.fashionshop.modules.identity.entity.User;
 import com.dth.fashionshop.modules.identity.enums.UserStatus;
 import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.JwtService;
-import com.dth.fashionshop.modules.identity.service.MediaService;
+import com.dth.fashionshop.shared.media.MediaService;
 import com.dth.fashionshop.modules.identity.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,7 +74,7 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse uploadAvatar(MultipartFile file) {
         User user = getCurrentAuthenticatedUser();
 
-        String avatarUrl = mediaService.uploadAvatar(file);
+        String avatarUrl = mediaService.uploadImage(file, "fashionshop/avatars");
 
         user.setAvatarUrl(avatarUrl);
         User updatedUser = userRepository.save(user);

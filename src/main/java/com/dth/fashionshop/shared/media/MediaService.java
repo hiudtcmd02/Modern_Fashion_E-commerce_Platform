@@ -1,4 +1,4 @@
-package com.dth.fashionshop.modules.identity.service;
+package com.dth.fashionshop.shared.media;
 
 import com.cloudinary.Cloudinary;
 import com.cloudinary.utils.ObjectUtils;
@@ -18,25 +18,23 @@ public class MediaService {
 
     private final Cloudinary cloudinary;
 
-    public String uploadAvatar(MultipartFile file) {
+    // Hàm dùng upload mọi loại ảnh trong hệ thống
+    public String uploadImage(MultipartFile file, String folderName) {
         try {
-            String publicId = "avatar_" + UUID.randomUUID().toString();
+            String publicId = UUID.randomUUID().toString();
 
             Map<String, Object> uploadParams = ObjectUtils.asMap(
-                    "folder", "fashionshop/avatars",
+                    "folder", folderName,
                     "public_id", publicId,
                     "resource_type", "image"
             );
 
             Map uploadResult = cloudinary.uploader().upload(file.getBytes(), uploadParams);
 
-            String imageUrl = uploadResult.get("secure_url").toString();
-            log.info("Đã upload thành công avatar lên Cloudinary: {}", imageUrl);
-
-            return imageUrl;
+            return uploadResult.get("secure_url").toString();
 
         } catch (IOException e) {
-            log.error("Lỗi khi upload ảnh lên Cloudinary", e);
+            log.error("Lỗi khi upload ảnh lên thư mục {} trên Cloudinary", folderName, e);
             throw new RuntimeException("Không thể tải ảnh lên. Vui lòng thử lại sau!");
         }
     }

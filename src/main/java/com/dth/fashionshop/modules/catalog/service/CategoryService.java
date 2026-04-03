@@ -16,4 +16,6 @@ public interface CategoryService {
     CategoryResponse updateCategory(Long id, CategoryRequest request, MultipartFile file);
 
     void deleteCategory(Long id);
+
+    CategoryResponse restoreCategory(Long id);
 }

@@ -6,6 +6,7 @@ import com.dth.fashionshop.modules.catalog.entity.Category;
 import com.dth.fashionshop.modules.catalog.repository.CategoryRepository;
 import com.dth.fashionshop.modules.catalog.repository.ProductRepository;
 import com.dth.fashionshop.modules.catalog.service.CategoryService;
+import com.dth.fashionshop.shared.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -37,12 +38,6 @@ public class CategoryServiceImpl implements CategoryService {
                 .build();
     }
 
-    // Hàm chuẩn hóa Slug
-    private String sanitizeSlug(String slug) {
-        if (slug == null) return null;
-        return slug.trim().toLowerCase().replaceAll("\\s+", "-");
-    }
-
     @Override
     public Page<CategoryResponse> getAllCategories(String keyword, Boolean isDeleted, int page, int size) {
         Pageable pageable = PageRequest.of(page, size, Sort.by("id").descending());
@@ -60,7 +55,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request, MultipartFile file) {
-        String safeSlug = sanitizeSlug(request.getSlug());
+        String safeSlug = StringUtils.generateSlug(request.getSlug());
 
         if (categoryRepository.existsByName(request.getName())) {
             throw new RuntimeException("Tên danh mục đã tồn tại!");
@@ -94,7 +89,7 @@ public class CategoryServiceImpl implements CategoryService {
         Category category = categoryRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
 
-        String safeSlug = sanitizeSlug(request.getSlug());
+        String safeSlug = StringUtils.generateSlug(request.getSlug());
 
         if (categoryRepository.existsByNameAndIdNot(request.getName(), id)) {
             throw new RuntimeException("Tên danh mục đã bị trùng với danh mục khác!");
@@ -131,8 +126,30 @@ public class CategoryServiceImpl implements CategoryService {
             throw new RuntimeException("Không thể xóa! Danh mục này đang chứa " + activeProductsCount + " sản phẩm. Vui lòng chuyển hết sản phẩm sang danh mục khác trước khi xóa.");
         }
 
+        if (category.getIsDeleted()) {
+            throw new RuntimeException("Danh mục này đã được xóa, không cần xóa thêm nữa!");
+        }
+
         category.setIsDeleted(true);
         categoryRepository.save(category);
         log.info("Admin đã xóa mềm thành công danh mục: {} (ID: {})", category.getName(), category.getId());
+    }
+
+    @Override
+    @Transactional
+    public CategoryResponse restoreCategory(Long id) {
+        Category category = categoryRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
+
+        if (!category.getIsDeleted()) {
+            throw new RuntimeException("Danh mục này vẫn đang hoạt động, không cần khôi phục!");
+        }
+
+        category.setIsDeleted(false);
+        Category restoredCategory = categoryRepository.save(category);
+
+        log.info("Admin đã khôi phục thành công danh mục: {} (ID: {})", restoredCategory.getName(), restoredCategory.getId());
+
+        return mapToResponse(restoredCategory);
     }
 }

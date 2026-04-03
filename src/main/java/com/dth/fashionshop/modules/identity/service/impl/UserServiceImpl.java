@@ -8,6 +8,7 @@ import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.JwtService;
 import com.dth.fashionshop.shared.media.MediaService;
 import com.dth.fashionshop.modules.identity.service.UserService;
+import com.dth.fashionshop.shared.utils.SecurityUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -33,7 +34,7 @@ public class UserServiceImpl implements UserService {
     private final InvalidatedTokenRepository invalidatedTokenRepository;
 
     private User getCurrentAuthenticatedUser() {
-        String email = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+        String email = SecurityUtils.getCurrentUserEmail();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin tài khoản!"));
     }

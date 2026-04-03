@@ -63,4 +63,10 @@ public class AdminCategoryController {
         categoryService.deleteCategory(id);
         return ResponseEntity.ok("Đã xóa danh mục thành công!");
     }
+
+    // Khôi phục danh mục
+    @PatchMapping("/{id}/restore")
+    public ResponseEntity<CategoryResponse> restoreCategory(@PathVariable Long id) {
+        return ResponseEntity.ok(categoryService.restoreCategory(id));
+    }
 }

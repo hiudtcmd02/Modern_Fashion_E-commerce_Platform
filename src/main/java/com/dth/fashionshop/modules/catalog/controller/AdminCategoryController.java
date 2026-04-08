@@ -3,6 +3,7 @@ package com.dth.fashionshop.modules.catalog.controller;
 import com.dth.fashionshop.modules.catalog.dto.request.CategoryRequest;
 import com.dth.fashionshop.modules.catalog.dto.response.CategoryResponse;
 import com.dth.fashionshop.modules.catalog.service.CategoryService;
+import com.dth.fashionshop.shared.utils.PaginationUtils;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -28,7 +29,7 @@ public class AdminCategoryController {
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-        int pageNumber = page > 0 ? page - 1 : 0;
+        int pageNumber = PaginationUtils.correctPageNo(page);
         return ResponseEntity.ok(categoryService.getAllCategories(keyword, isDeleted, pageNumber, size));
     }
 

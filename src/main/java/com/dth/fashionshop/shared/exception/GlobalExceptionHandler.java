@@ -7,6 +7,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.multipart.support.MissingServletRequestPartException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -51,5 +52,18 @@ public class GlobalExceptionHandler {
         response.put("message", "Access Denied: Bạn không có quyền truy cập tài nguyên này!");
 
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
+    }
+
+    // Xử lý lỗi thiếu request part
+    @ExceptionHandler(MissingServletRequestPartException.class)
+    public ResponseEntity<?> handleMissingServletRequestPartException(MissingServletRequestPartException ex) {
+        String partName = ex.getRequestPartName();
+        String message = "Thiếu phần dữ liệu bắt buộc: " + partName + ". Vui lòng kiểm tra lại form-data!";
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", HttpStatus.BAD_REQUEST.value());
+        response.put("message", message);
+
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
     }
 }

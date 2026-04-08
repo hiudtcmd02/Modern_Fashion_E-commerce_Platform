@@ -99,6 +99,9 @@ public class CategoryServiceImpl implements CategoryService {
         }
 
         if (file != null && !file.isEmpty()) {
+            if (category.getThumbnailUrl() != null) {
+                mediaService.deleteImage(category.getThumbnailUrl());
+            }
             String newImageUrl = mediaService.uploadImage(file, "fashionshop/categories");
             category.setThumbnailUrl(newImageUrl);
         }

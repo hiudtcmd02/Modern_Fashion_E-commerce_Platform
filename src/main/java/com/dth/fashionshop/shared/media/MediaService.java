@@ -10,6 +10,8 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
@@ -36,6 +38,26 @@ public class MediaService {
         } catch (IOException e) {
             log.error("Lỗi khi upload ảnh lên thư mục {} trên Cloudinary", folderName, e);
             throw new RuntimeException("Không thể tải ảnh lên. Vui lòng thử lại sau!");
+        }
+    }
+
+    // Hàm xóa ảnh trên Cloudinary
+    public void deleteImage(String imageUrl) {
+        try {
+            Pattern pattern = Pattern.compile("upload/(?:v\\d+/)?(.*?)\\.[a-zA-Z0-9]+$");
+            Matcher matcher = pattern.matcher(imageUrl);
+
+            if (matcher.find()) {
+                String publicId = matcher.group(1);
+
+                cloudinary.uploader().destroy(publicId, ObjectUtils.emptyMap());
+                log.info("Đã dọn dẹp file rác trên Cloudinary: {}", publicId);
+            } else {
+                log.warn("Không thể trích xuất public_id từ URL: {}", imageUrl);
+            }
+
+        } catch (Exception e) {
+            log.error("Lỗi khi xóa file gốc trên Cloudinary: {}", imageUrl, e);
         }
     }
 }

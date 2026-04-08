@@ -75,6 +75,10 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse uploadAvatar(MultipartFile file) {
         User user = getCurrentAuthenticatedUser();
 
+        if (user.getAvatarUrl() != null) {
+            mediaService.deleteImage(user.getAvatarUrl());
+        }
+
         String avatarUrl = mediaService.uploadImage(file, "fashionshop/avatars");
 
         user.setAvatarUrl(avatarUrl);

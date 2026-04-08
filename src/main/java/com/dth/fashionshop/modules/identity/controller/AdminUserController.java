@@ -4,6 +4,7 @@ import com.dth.fashionshop.modules.identity.dto.response.UserAdminResponse;
 import com.dth.fashionshop.modules.identity.dto.response.UserDetailAdminResponse;
 import com.dth.fashionshop.modules.identity.enums.UserStatus;
 import com.dth.fashionshop.modules.identity.service.AdminUserService;
+import com.dth.fashionshop.shared.utils.PaginationUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -27,7 +28,7 @@ public class AdminUserController {
             @RequestParam(defaultValue = "10") int size
     ) {
 
-        int pageNumber = page > 0 ? page - 1 : 0;
+        int pageNumber = PaginationUtils.correctPageNo(page);
 
         return ResponseEntity.ok(adminUserService.getAllUsers(keyword, status, pageNumber, size));
     }

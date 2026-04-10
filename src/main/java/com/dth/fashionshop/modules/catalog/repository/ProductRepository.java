@@ -2,6 +2,7 @@ package com.dth.fashionshop.modules.catalog.repository;
 
 import com.dth.fashionshop.modules.catalog.entity.Product;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -33,4 +34,22 @@ public interface ProductRepository extends JpaRepository<Product, Long>, Product
             "WHERE (LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%')) OR " +
             "LOWER(v.skuCode) LIKE LOWER(CONCAT('%', :keyword, '%'))) ")
     List<Product> suggestProducts(@Param("keyword") String keyword, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"variants"})
+    @Query("SELECT DISTINCT p FROM Product p JOIN p.variants v " +
+            "WHERE p.isDeleted = false AND v.isActive = true " +
+            "ORDER BY p.createdAt DESC")
+    List<Product> findTopNewestActiveProducts(Pageable pageable);
+
+    @EntityGraph(attributePaths = {"variants"})
+    @Query("SELECT DISTINCT p FROM Product p JOIN p.variants v " +
+            "WHERE p.isDeleted = false AND v.isActive = true AND p.reviewCount >= :minReview " +
+            "ORDER BY p.averageRating DESC")
+    List<Product> findTopRatedActiveProducts(@Param("minReview") int minReview, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"variants"})
+    @Query("SELECT DISTINCT p FROM Product p JOIN p.variants v " +
+            "WHERE p.isDeleted = false AND v.isActive = true " +
+            "AND LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
+    List<Product> suggestActiveProducts(@Param("keyword") String keyword, Pageable pageable);
 }

@@ -2,11 +2,9 @@ package com.dth.fashionshop.modules.catalog.repository.impl;
 
 import com.dth.fashionshop.modules.catalog.dto.request.ProductFilterRequest;
 import com.dth.fashionshop.modules.catalog.dto.response.ProductListAdminResponse;
+import com.dth.fashionshop.modules.catalog.entity.Product;
 import com.dth.fashionshop.modules.catalog.repository.ProductRepositoryCustom;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.PersistenceContext;
-import jakarta.persistence.Query;
-import jakarta.persistence.Tuple;
+import jakarta.persistence.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -117,5 +115,75 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         }).collect(Collectors.toList());
 
         return new PageImpl<>(content, pageable, totalElements);
+    }
+
+    @Override
+    public Page<Product> searchStorefrontProducts(String keyword, Long categoryId, Long minPrice, Long maxPrice, String sort, Pageable pageable) {
+        StringBuilder jpql = new StringBuilder("SELECT p FROM Product p JOIN p.variants v WHERE p.isDeleted = false AND v.isActive = true ");
+        StringBuilder countBuilder = new StringBuilder("SELECT COUNT(DISTINCT p.id) FROM Product p JOIN p.variants v WHERE p.isDeleted = false AND v.isActive = true ");
+
+        Map<String, Object> params = new HashMap<>();
+
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            jpql.append("AND LOWER(p.name) LIKE :keyword ");
+            countBuilder.append("AND LOWER(p.name) LIKE :keyword ");
+            params.put("keyword", "%" + keyword.trim().toLowerCase() + "%");
+        }
+
+        if (categoryId != null) {
+            jpql.append("AND p.category.id = :categoryId ");
+            countBuilder.append("AND p.category.id = :categoryId ");
+            params.put("categoryId", categoryId);
+        }
+
+        if (minPrice != null) {
+            jpql.append("AND v.price >= :minPrice ");
+            countBuilder.append("AND v.price >= :minPrice ");
+            params.put("minPrice", minPrice);
+        }
+        if (maxPrice != null) {
+            jpql.append("AND v.price <= :maxPrice ");
+            countBuilder.append("AND v.price <= :maxPrice ");
+            params.put("maxPrice", maxPrice);
+        }
+
+        jpql.append("GROUP BY p.id ");
+
+        if (sort != null) {
+            switch (sort.toLowerCase()) {
+                case "price_asc":
+                    jpql.append("ORDER BY MIN(v.price) ASC ");
+                    break;
+                case "price_desc":
+                    jpql.append("ORDER BY MAX(v.price) DESC ");
+                    break;
+                case "newest":
+                    jpql.append("ORDER BY p.createdAt DESC ");
+                    break;
+                case "oldest":
+                    jpql.append("ORDER BY p.createdAt ASC ");
+                    break;
+                default:
+                    jpql.append("ORDER BY p.createdAt DESC ");
+            }
+        } else {
+            jpql.append("ORDER BY p.createdAt DESC ");
+        }
+
+        TypedQuery<Product> query = em.createQuery(jpql.toString(), Product.class);
+        TypedQuery<Long> countQuery = em.createQuery(countBuilder.toString(), Long.class);
+
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+            countQuery.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        query.setFirstResult((int) pageable.getOffset());
+        query.setMaxResults(pageable.getPageSize());
+
+        List<Product> products = query.getResultList();
+        Long totalElements = countQuery.getSingleResult();
+
+        return new PageImpl<>(products, pageable, totalElements != null ? totalElements : 0);
     }
 }

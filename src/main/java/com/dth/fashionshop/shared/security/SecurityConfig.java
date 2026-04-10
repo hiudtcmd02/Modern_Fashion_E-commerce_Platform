@@ -6,6 +6,7 @@ import com.dth.fashionshop.shared.exception.CustomAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -54,6 +55,9 @@ public class SecurityConfig {
                                 "/api/v1/identity/verify-reset-otp",
                                 "/error"
                         ).permitAll()
+
+                        .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 
                         .anyRequest().authenticated()
                 )

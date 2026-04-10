@@ -376,7 +376,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<ProductSuggestionResponse> getAdminProductSuggestions(String keyword) {
         if (keyword == null || keyword.trim().length() < 3) {
-            return java.util.Collections.emptyList();
+            return Collections.emptyList();
         }
 
         Pageable limit = PageRequest.of(0, 3);

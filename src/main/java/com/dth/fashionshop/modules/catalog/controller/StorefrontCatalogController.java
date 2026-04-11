@@ -2,6 +2,7 @@ package com.dth.fashionshop.modules.catalog.controller;
 
 import com.dth.fashionshop.modules.catalog.dto.response.ProductSuggestionResponse;
 import com.dth.fashionshop.modules.catalog.dto.response.storefront.CategoryGuestResponse;
+import com.dth.fashionshop.modules.catalog.dto.response.storefront.ProductDetailGuestResponse;
 import com.dth.fashionshop.modules.catalog.dto.response.storefront.ProductGuestResponse;
 import com.dth.fashionshop.modules.catalog.service.StorefrontService;
 import com.dth.fashionshop.shared.utils.PaginationUtils;
@@ -60,5 +61,11 @@ public class StorefrontCatalogController {
         return ResponseEntity.ok(storefrontService.searchProducts(
                 keyword, categoryId, minPrice, maxPrice, sort, pageNumber, size
         ));
+    }
+
+    // Lấy thông tin chi tiết sản phẩm cho khách hàng
+    @GetMapping("/products/{slug}")
+    public ResponseEntity<ProductDetailGuestResponse> getProductDetail(@PathVariable String slug) {
+        return ResponseEntity.ok(storefrontService.getProductDetail(slug));
     }
 }

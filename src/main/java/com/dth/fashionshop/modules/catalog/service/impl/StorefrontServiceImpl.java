@@ -8,6 +8,10 @@ import com.dth.fashionshop.modules.catalog.entity.ProductVariant;
 import com.dth.fashionshop.modules.catalog.repository.CategoryRepository;
 import com.dth.fashionshop.modules.catalog.repository.ProductRepository;
 import com.dth.fashionshop.modules.catalog.service.StorefrontService;
+import com.dth.fashionshop.modules.catalog.dto.response.ImageResponse;
+import com.dth.fashionshop.modules.catalog.dto.response.storefront.ProductDetailGuestResponse;
+import com.dth.fashionshop.modules.catalog.dto.response.storefront.VariantGuestResponse;
+import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -97,5 +101,48 @@ public class StorefrontServiceImpl implements StorefrontService {
                 keyword, categoryId, minPrice, maxPrice, sort, pageRequest);
 
         return productPage.map(this::mapToProductGuestResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ProductDetailGuestResponse getProductDetail(String slug) {
+        Product product = productRepository.findBySlugAndIsDeletedFalse(slug)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm hoặc sản phẩm đã ngừng kinh doanh!"));
+
+        List<ImageResponse> images = product.getImages().stream()
+                .map(img -> ImageResponse.builder()
+                        .id(img.getId())
+                        .imageUrl(img.getImageUrl())
+                        .build())
+                .collect(Collectors.toList());
+
+        List<VariantGuestResponse> activeVariants = product.getVariants().stream()
+                .filter(ProductVariant::getIsActive)
+                .map(v -> VariantGuestResponse.builder()
+                        .id(v.getId())
+                        .skuCode(v.getSkuCode())
+                        .variantName(v.getVariantName())
+                        .price(v.getPrice())
+                        .stockQuantity(v.getStockQuantity())
+                        .build())
+                .collect(Collectors.toList());
+
+        LongSummaryStatistics priceStats = activeVariants.stream()
+                .mapToLong(VariantGuestResponse::getPrice)
+                .summaryStatistics();
+
+        return ProductDetailGuestResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .slug(product.getSlug())
+                .thumbnailUrl(product.getThumbnailUrl())
+                .description(product.getDescription())
+                .minPrice(priceStats.getCount() > 0 ? priceStats.getMin() : 0L)
+                .maxPrice(priceStats.getCount() > 0 ? priceStats.getMax() : 0L)
+                .averageRating(product.getAverageRating())
+                .reviewCount(product.getReviewCount())
+                .images(images)
+                .variants(activeVariants)
+                .build();
     }
 }

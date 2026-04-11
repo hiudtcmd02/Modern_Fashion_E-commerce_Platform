@@ -365,6 +365,7 @@ public class ProductServiceImpl implements ProductService {
                 .build();
     }
 
+    // Hàm tìm kiếm, lọc và phân trang danh sách sản phẩm
     @Override
     @Transactional(readOnly = true)
     public Page<ProductListAdminResponse> searchAndFilterAdminProducts(ProductFilterRequest filter, int page, int size) {

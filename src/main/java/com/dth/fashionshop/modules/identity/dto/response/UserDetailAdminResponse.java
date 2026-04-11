@@ -28,7 +28,7 @@ public class UserDetailAdminResponse {
     // Sổ địa chỉ
     private List<AddressResponse> addresses;
 
-    // KHỐI 3: Thống kê & Đơn hàng
+    // Thống kê & Đơn hàng
     // TODO: Khi nào phát triển xong Module Order (Đơn hàng), hãy bỏ comment các dòng dưới đây
     // private Integer totalOrders;
     // private Double totalSpent; // Customer Lifetime Value

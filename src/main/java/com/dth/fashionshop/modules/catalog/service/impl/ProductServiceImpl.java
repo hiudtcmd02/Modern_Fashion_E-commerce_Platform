@@ -13,6 +13,7 @@ import com.dth.fashionshop.modules.catalog.repository.ProductImageRepository;
 import com.dth.fashionshop.modules.catalog.repository.ProductRepository;
 import com.dth.fashionshop.modules.catalog.repository.ProductVariantRepository;
 import com.dth.fashionshop.modules.catalog.service.ProductService;
+import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import com.dth.fashionshop.shared.media.MediaService;
 import com.dth.fashionshop.shared.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
@@ -391,5 +392,13 @@ public class ProductServiceImpl implements ProductService {
                         .thumbnailUrl(p.getThumbnailUrl())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    // Hàm lấy thông tin phân loại (biến thể) bằng SKU code (hỗ trợ các module khác lấy thông tin biến thể)
+    @Override
+    @Transactional(readOnly = true)
+    public ProductVariant getVariantEntityBySku(String skuCode) {
+        return variantRepository.findBySkuCode(skuCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phân loại (biến thể) với mã SKU: " + skuCode));
     }
 }

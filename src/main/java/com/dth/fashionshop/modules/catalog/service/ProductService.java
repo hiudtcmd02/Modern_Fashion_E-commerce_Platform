@@ -3,6 +3,7 @@ package com.dth.fashionshop.modules.catalog.service;
 import com.dth.fashionshop.modules.catalog.dto.request.ProductFilterRequest;
 import com.dth.fashionshop.modules.catalog.dto.request.ProductRequest;
 import com.dth.fashionshop.modules.catalog.dto.response.*;
+import com.dth.fashionshop.modules.catalog.entity.ProductVariant;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -40,4 +41,6 @@ public interface ProductService {
     Page<ProductListAdminResponse> searchAndFilterAdminProducts(ProductFilterRequest filter, int page, int size);
 
     List<ProductSuggestionResponse> getAdminProductSuggestions(String keyword);
+
+    ProductVariant getVariantEntityBySku(String skuCode);
 }

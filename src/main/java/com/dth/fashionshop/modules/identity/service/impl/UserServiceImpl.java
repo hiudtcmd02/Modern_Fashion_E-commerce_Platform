@@ -33,7 +33,8 @@ public class UserServiceImpl implements UserService {
     private final JwtService jwtService;
     private final InvalidatedTokenRepository invalidatedTokenRepository;
 
-    private User getCurrentAuthenticatedUser() {
+    @Override
+    public User getCurrentAuthenticatedUser() {
         String email = SecurityUtils.getCurrentUserEmail();
         return userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin tài khoản!"));

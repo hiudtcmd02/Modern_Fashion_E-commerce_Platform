@@ -4,6 +4,7 @@ import com.dth.fashionshop.modules.cart.dto.request.AddToCartRequest;
 import com.dth.fashionshop.modules.cart.dto.request.UpdateCartItemRequest;
 import com.dth.fashionshop.modules.cart.dto.response.CartItemResponse;
 import com.dth.fashionshop.modules.cart.dto.response.CartResponse;
+import com.dth.fashionshop.modules.cart.dto.response.MiniCartResponse;
 import com.dth.fashionshop.modules.cart.entity.Cart;
 import com.dth.fashionshop.modules.cart.entity.CartItem;
 import com.dth.fashionshop.modules.cart.repository.CartItemRepository;
@@ -158,5 +159,78 @@ public class CartServiceImpl implements CartService {
         cartItemRepository.save(item);
 
         log.info("User [{}] đã cập nhật số lượng CartItem [{}] thành {}", user.getEmail(), itemId, request.getQuantity());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public MiniCartResponse getMiniCart() {
+        User user = userService.getCurrentAuthenticatedUser();
+        Cart cart = cartRepository.findByUser(user).orElse(null);
+
+        if (cart == null || cart.getItems().isEmpty()) {
+            return MiniCartResponse.builder()
+                    .totalCartItems(0)
+                    .totalTempPrice(0L)
+                    .items(Collections.emptyList())
+                    .build();
+        }
+
+        int totalCartItems = cart.getItems().size();
+        long totalTempPrice = 0L;
+        List<CartItemResponse> itemResponses = new ArrayList<>();
+
+        for (CartItem item : cart.getItems()) {
+            ProductVariant variant = item.getVariant();
+            Product product = variant.getProduct();
+
+            boolean isAvailable = !product.getIsDeleted() && variant.getIsActive() && variant.getStockQuantity() > 0;
+            boolean hasError = isAvailable && item.getQuantity() > variant.getStockQuantity();
+
+            if (isAvailable && !hasError) {
+                totalTempPrice += (variant.getPrice() * item.getQuantity());
+            }
+
+            itemResponses.add(CartItemResponse.builder()
+                    .id(item.getId())
+                    .skuCode(variant.getSkuCode())
+                    .productName(product.getName())
+                    .variantName(variant.getVariantName())
+                    .thumbnailUrl(product.getThumbnailUrl())
+                    .unitPrice(variant.getPrice())
+                    .quantity(item.getQuantity())
+                    .currentStock(variant.getStockQuantity())
+                    .isAvailable(isAvailable)
+                    .hasError(hasError)
+                    .errorMessage(!isAvailable ? "Sản phẩm đã hết hàng hoặc ngừng kinh doanh" :
+                            (hasError ? "Số lượng sản phẩm trong kho không đủ" : null))
+                    .build());
+        }
+
+        itemResponses.sort((a, b) -> b.getId().compareTo(a.getId()));
+
+        List<CartItemResponse> top3Items = itemResponses.stream().limit(3).toList();
+
+        return MiniCartResponse.builder()
+                .totalCartItems(totalCartItems)
+                .totalTempPrice(totalTempPrice)
+                .items(top3Items)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void removeCartItem(Long itemId) {
+        User user = userService.getCurrentAuthenticatedUser();
+
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Giỏ hàng không tồn tại!"));
+
+        CartItem item = cartItemRepository.findByIdAndCart_Id(itemId, cart.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm trong giỏ hàng!"));
+
+        cart.getItems().remove(item);
+        cartRepository.save(cart);
+
+        log.info("User [{}] đã xóa CartItem [{}] khỏi giỏ hàng.", user.getEmail(), itemId);
     }
 }

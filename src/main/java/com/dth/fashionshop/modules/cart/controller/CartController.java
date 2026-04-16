@@ -3,6 +3,7 @@ package com.dth.fashionshop.modules.cart.controller;
 import com.dth.fashionshop.modules.cart.dto.request.AddToCartRequest;
 import com.dth.fashionshop.modules.cart.dto.request.UpdateCartItemRequest;
 import com.dth.fashionshop.modules.cart.dto.response.CartResponse;
+import com.dth.fashionshop.modules.cart.dto.response.MiniCartResponse;
 import com.dth.fashionshop.modules.cart.service.CartService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -40,5 +41,20 @@ public class CartController {
         cartService.updateItemQuantity(itemId, request);
 
         return ResponseEntity.ok("Cập nhật số lượng thành công");
+    }
+
+    // Xem giỏ hàng thu nhỏ trên Header
+    @GetMapping("/mini")
+    public ResponseEntity<MiniCartResponse> getMiniCart() {
+        return ResponseEntity.ok(cartService.getMiniCart());
+    }
+
+    // Xóa sản phẩm khỏi giỏ hàng
+    @DeleteMapping("/items/{itemId}")
+    public ResponseEntity<String> removeCartItem(@PathVariable Long itemId) {
+
+        cartService.removeCartItem(itemId);
+
+        return ResponseEntity.ok("Đã xóa sản phẩm khỏi giỏ hàng");
     }
 }

@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/admin/users")
 @RequiredArgsConstructor
@@ -36,11 +38,11 @@ public class AdminUserController {
     // Khóa / Mở khóa tài khoản
     @PutMapping("/{id}/toggle-status")
     @PreAuthorize("hasAuthority('ROLE_ADMIN')")
-    public ResponseEntity<String> toggleUserStatus(@PathVariable Long id) {
+    public ResponseEntity<?> toggleUserStatus(@PathVariable Long id) {
 
         adminUserService.toggleUserStatus(id);
 
-        return ResponseEntity.ok("Cập nhật trạng thái tài khoản thành công!");
+        return ResponseEntity.ok(Map.of("message", "Cập nhật trạng thái tài khoản thành công!"));
     }
 
     // Lấy thông tin chi tiết người dùng (Customer 360 View)

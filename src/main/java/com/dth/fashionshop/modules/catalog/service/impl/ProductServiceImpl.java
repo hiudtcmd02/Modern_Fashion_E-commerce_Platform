@@ -401,4 +401,24 @@ public class ProductServiceImpl implements ProductService {
         return variantRepository.findBySkuCode(skuCode)
                 .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phân loại (biến thể) với mã SKU: " + skuCode));
     }
+
+    // Hàm trừ tồn kho khi khách hàng đặt hàng
+    @Override
+    @Transactional
+    public void decreaseStockWithLock(Long variantId, Integer quantity) {
+        ProductVariant variant = variantRepository.findByIdWithLock(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phân loại sản phẩm"));
+
+        if (variant.getProduct().getIsDeleted() || !variant.getIsActive()) {
+            throw new RuntimeException("Sản phẩm [" + variant.getSkuCode() + "] hiện không còn kinh doanh.");
+        }
+
+        if (variant.getStockQuantity() < quantity) {
+            throw new RuntimeException("Sản phẩm [" + variant.getSkuCode() + "] số lượng tồn kho không đủ. Vui lòng cập nhật lại giỏ hàng.");
+        }
+
+        variant.setStockQuantity(variant.getStockQuantity() - quantity);
+        variantRepository.save(variant);
+        log.info("SKU [{}] đã trừ kho {}, còn lại {}", variant.getSkuCode(), quantity, variant.getStockQuantity());
+    }
 }

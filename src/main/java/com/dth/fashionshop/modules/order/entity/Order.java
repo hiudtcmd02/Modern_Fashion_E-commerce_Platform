@@ -30,6 +30,9 @@ public class Order {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
+    @Column(name = "order_code", unique = true, length = 50, nullable = false)
+    private String orderCode;
+
     @Column(name = "voucher_code", length = 50)
     private String voucherCode;
 

@@ -6,6 +6,7 @@ import com.dth.fashionshop.modules.identity.entity.User;
 import com.dth.fashionshop.modules.identity.enums.UserStatus;
 import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.JwtService;
+import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import com.dth.fashionshop.shared.media.MediaService;
 import com.dth.fashionshop.modules.identity.service.UserService;
 import com.dth.fashionshop.shared.utils.SecurityUtils;
@@ -37,7 +38,7 @@ public class UserServiceImpl implements UserService {
     public User getCurrentAuthenticatedUser() {
         String email = SecurityUtils.getCurrentUserEmail();
         return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin tài khoản!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin tài khoản!"));
     }
 
     private UserProfileResponse mapToResponse(User user) {

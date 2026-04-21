@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -38,18 +40,18 @@ public class UserController {
 
     // Người dùng đổi mật khẩu trong hồ sơ cá nhân
     @PutMapping("/profile/password")
-    public ResponseEntity<String> changePassword(
+    public ResponseEntity<?> changePassword(
             HttpServletRequest httpServletRequest,
             @Valid @RequestBody ChangePasswordRequest request) {
 
         String authHeader = httpServletRequest.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body("Thiếu mã xác thực!");
+            return ResponseEntity.badRequest().body(Map.of("message", "Thiếu mã xác thực!"));
         }
 
         String token = authHeader.substring(7);
         userService.changePassword(token, request);
 
-        return ResponseEntity.ok("Đổi mật khẩu thành công. Vui lòng đăng nhập lại!");
+        return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công. Vui lòng đăng nhập lại!"));
     }
 }

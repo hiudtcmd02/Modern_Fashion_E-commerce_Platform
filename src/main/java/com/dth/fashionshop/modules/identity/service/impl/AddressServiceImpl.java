@@ -5,11 +5,11 @@ import com.dth.fashionshop.modules.identity.dto.response.AddressResponse;
 import com.dth.fashionshop.modules.identity.entity.Address;
 import com.dth.fashionshop.modules.identity.entity.User;
 import com.dth.fashionshop.modules.identity.repository.AddressRepository;
-import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.AddressService;
+import com.dth.fashionshop.modules.identity.service.UserService;
+import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -22,13 +22,7 @@ import java.util.stream.Collectors;
 public class AddressServiceImpl implements AddressService {
 
     private final AddressRepository addressRepository;
-    private final UserRepository userRepository;
-
-    private User getCurrentAuthenticatedUser() {
-        String email = SecurityContextHolder.getContext().getAuthentication().getName();
-        return userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin tài khoản!"));
-    }
+    private final UserService userService;
 
     private AddressResponse mapToResponse(Address address) {
         return AddressResponse.builder()
@@ -54,7 +48,7 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional
     public AddressResponse createAddress(AddressRequest request) {
-        User user = getCurrentAuthenticatedUser();
+        User user = userService.getCurrentAuthenticatedUser();
 
         boolean isFirstAddress = addressRepository.countByUserAndIsDeletedFalse(user) == 0;
 
@@ -84,7 +78,7 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public List<AddressResponse> getMyAddresses() {
-        User user = getCurrentAuthenticatedUser();
+        User user = userService.getCurrentAuthenticatedUser();
 
         return addressRepository.findByUserAndIsDeletedFalseOrderByIsDefaultDescCreatedAtDesc(user)
                 .stream()
@@ -95,10 +89,10 @@ public class AddressServiceImpl implements AddressService {
     @Override
     @Transactional
     public AddressResponse updateAddress(Long id, AddressRequest request) {
-        User user = getCurrentAuthenticatedUser();
+        User user = userService.getCurrentAuthenticatedUser();
 
         Address address = addressRepository.findByIdAndUserAndIsDeletedFalse(id, user)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ này!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy địa chỉ này!"));
 
         boolean wantToBeDefault = request.getIsDefault() != null && request.getIsDefault();
 
@@ -127,10 +121,10 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public void deleteAddress(Long id) {
-        User user = getCurrentAuthenticatedUser();
+        User user = userService.getCurrentAuthenticatedUser();
 
         Address address = addressRepository.findByIdAndUserAndIsDeletedFalse(id, user)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ này!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy địa chỉ này!"));
 
         if (address.getIsDefault()) {
             throw new RuntimeException("Không thể xóa địa chỉ mặc định. Vui lòng chọn địa chỉ khác làm mặc định trước khi xóa.");
@@ -144,10 +138,10 @@ public class AddressServiceImpl implements AddressService {
 
     @Override
     public AddressResponse getAddressById(Long id) {
-        User user = getCurrentAuthenticatedUser();
+        User user = userService.getCurrentAuthenticatedUser();
 
         Address address = addressRepository.findByIdAndUserAndIsDeletedFalse(id, user)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ này!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy địa chỉ này!"));
 
         return mapToResponse(address);
     }

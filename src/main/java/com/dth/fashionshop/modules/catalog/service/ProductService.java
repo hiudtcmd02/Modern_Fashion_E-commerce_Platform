@@ -43,4 +43,6 @@ public interface ProductService {
     List<ProductSuggestionResponse> getAdminProductSuggestions(String keyword);
 
     ProductVariant getVariantEntityBySku(String skuCode);
+
+    void decreaseStockWithLock(Long variantId, Integer quantity);
 }

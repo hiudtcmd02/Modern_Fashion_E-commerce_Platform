@@ -13,6 +13,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/admin/categories")
 @RequiredArgsConstructor
@@ -60,9 +62,9 @@ public class AdminCategoryController {
 
     // Xóa mềm danh mục
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteCategory(@PathVariable Long id) {
+    public ResponseEntity<?> deleteCategory(@PathVariable Long id) {
         categoryService.deleteCategory(id);
-        return ResponseEntity.ok("Đã xóa danh mục thành công!");
+        return ResponseEntity.ok(Map.of("message", "Đã xóa danh mục thành công!"));
     }
 
     // Khôi phục danh mục

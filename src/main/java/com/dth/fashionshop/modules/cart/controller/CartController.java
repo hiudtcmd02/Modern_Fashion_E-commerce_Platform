@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/v1/cart")
 @RequiredArgsConstructor
@@ -19,11 +21,11 @@ public class CartController {
 
     // Thêm sản phẩm vào giỏ hàng
     @PostMapping("/items")
-    public ResponseEntity<String> addToCart(@Valid @RequestBody AddToCartRequest request) {
+    public ResponseEntity<?> addToCart(@Valid @RequestBody AddToCartRequest request) {
 
         cartService.addToCart(request);
 
-        return ResponseEntity.ok("Đã thêm sản phẩm vào giỏ hàng thành công");
+        return ResponseEntity.ok(Map.of("message", "Đã thêm sản phẩm vào giỏ hàng thành công"));
     }
 
     // Xem chi tiết giỏ hàng
@@ -34,13 +36,13 @@ public class CartController {
 
     // Cập nhật số lượng của một sản phẩm trong giỏ hàng
     @PutMapping("/items/{itemId}")
-    public ResponseEntity<String> updateItemQuantity(
+    public ResponseEntity<?> updateItemQuantity(
             @PathVariable Long itemId,
             @Valid @RequestBody UpdateCartItemRequest request) {
 
         cartService.updateItemQuantity(itemId, request);
 
-        return ResponseEntity.ok("Cập nhật số lượng thành công");
+        return ResponseEntity.ok(Map.of("message", "Cập nhật số lượng thành công"));
     }
 
     // Xem giỏ hàng thu nhỏ trên Header
@@ -51,10 +53,10 @@ public class CartController {
 
     // Xóa sản phẩm khỏi giỏ hàng
     @DeleteMapping("/items/{itemId}")
-    public ResponseEntity<String> removeCartItem(@PathVariable Long itemId) {
+    public ResponseEntity<?> removeCartItem(@PathVariable Long itemId) {
 
         cartService.removeCartItem(itemId);
 
-        return ResponseEntity.ok("Đã xóa sản phẩm khỏi giỏ hàng");
+        return ResponseEntity.ok(Map.of("message", "Đã xóa sản phẩm khỏi giỏ hàng"));
     }
 }

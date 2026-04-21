@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/addresses")
@@ -41,9 +42,9 @@ public class AddressController {
 
     // Xóa địa chỉ
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteAddress(@PathVariable Long id) {
+    public ResponseEntity<?> deleteAddress(@PathVariable Long id) {
         addressService.deleteAddress(id);
-        return ResponseEntity.ok("Xóa địa chỉ thành công!");
+        return ResponseEntity.ok(Map.of("message", "Xóa địa chỉ thành công!"));
     }
 
     // Lấy thông tin một địa chỉ cụ thể

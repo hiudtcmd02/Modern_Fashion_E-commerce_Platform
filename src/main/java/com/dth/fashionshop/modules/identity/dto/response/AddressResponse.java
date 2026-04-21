@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 @Builder
-public class AddressResponse {
+public class AddressResponse { // DTO này dùng cho cả module identity và module order
     private Long id;
     private String receiverName;
     private String receiverPhone;

@@ -55,24 +55,24 @@ public class IdentityController {
 
     // Đăng xuất
     @PostMapping("/logout")
-    public ResponseEntity<String> logout(HttpServletRequest request) {
+    public ResponseEntity<?> logout(HttpServletRequest request) {
 
         String authHeader = request.getHeader("Authorization");
 
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             identityService.logout(token);
-            return ResponseEntity.ok("Đăng xuất thành công!");
+            return ResponseEntity.ok(Map.of("message", "Đăng xuất thành công!"));
         }
 
-        return ResponseEntity.badRequest().body("Không tìm thấy Token hợp lệ để đăng xuất!");
+        return ResponseEntity.badRequest().body(Map.of("message", "Không tìm thấy Token hợp lệ để đăng xuất!"));
     }
 
     // Quên mật khẩu và yêu cầu cấp OTP xác thực để khôi phục mật khẩu mới (dùng cho cả yêu cầu cấp lại OTP)
     @PostMapping("/forgot-password")
-    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         identityService.forgotPassword(request);
-        return ResponseEntity.ok("Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn!");
+        return ResponseEntity.ok(Map.of("message", "Mã OTP khôi phục mật khẩu đã được gửi đến email của bạn!"));
     }
 
     // Xác thực OTP quên mật khẩu
@@ -84,18 +84,18 @@ public class IdentityController {
 
     // Đổi mật khẩu sau khi đã xác thực OTP quên mật khẩu
     @PostMapping("/reset-password")
-    public ResponseEntity<String> resetPassword(
+    public ResponseEntity<?> resetPassword(
             HttpServletRequest httpServletRequest,
             @Valid @RequestBody ResetPasswordRequest request) {
 
         String authHeader = httpServletRequest.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.badRequest().body("Thiếu mã xác thực (Reset Token)!");
+            return ResponseEntity.badRequest().body(Map.of("message", "Thiếu mã xác thực (Reset Token)!"));
         }
 
         String token = authHeader.substring(7);
         identityService.resetPassword(token, request);
 
-        return ResponseEntity.ok("Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới.");
+        return ResponseEntity.ok(Map.of("message", "Đổi mật khẩu thành công! Vui lòng đăng nhập lại với mật khẩu mới."));
     }
 }

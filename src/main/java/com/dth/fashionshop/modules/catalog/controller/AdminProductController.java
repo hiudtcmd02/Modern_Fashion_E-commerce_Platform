@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/admin/products")
@@ -67,9 +68,9 @@ public class AdminProductController {
 
     // Xóa mềm sản phẩm
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteProduct(@PathVariable Long id) {
+    public ResponseEntity<?> deleteProduct(@PathVariable Long id) {
         productService.deleteProduct(id);
-        return ResponseEntity.ok("Xóa sản phẩm thành công!");
+        return ResponseEntity.ok(Map.of("message", "Xóa sản phẩm thành công!"));
     }
 
     // Khôi phục sản phẩm
@@ -80,9 +81,9 @@ public class AdminProductController {
 
     // Xóa riêng lẻ 1 ảnh phụ
     @DeleteMapping("/images/{imageId}")
-    public ResponseEntity<String> deleteProductImage(@PathVariable Long imageId) {
+    public ResponseEntity<?> deleteProductImage(@PathVariable Long imageId) {
         productService.deleteProductImage(imageId);
-        return ResponseEntity.ok("Đã xóa hình ảnh thành công!");
+        return ResponseEntity.ok(Map.of("message", "Đã xóa hình ảnh thành công!"));
     }
 
     // Thống kê nhanh

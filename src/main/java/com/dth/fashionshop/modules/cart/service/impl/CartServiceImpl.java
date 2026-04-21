@@ -2,6 +2,7 @@ package com.dth.fashionshop.modules.cart.service.impl;
 
 import com.dth.fashionshop.modules.cart.dto.request.AddToCartRequest;
 import com.dth.fashionshop.modules.cart.dto.request.UpdateCartItemRequest;
+import com.dth.fashionshop.modules.cart.dto.response.CartItemCheckoutResponse;
 import com.dth.fashionshop.modules.cart.dto.response.CartItemResponse;
 import com.dth.fashionshop.modules.cart.dto.response.CartResponse;
 import com.dth.fashionshop.modules.cart.dto.response.MiniCartResponse;
@@ -232,5 +233,46 @@ public class CartServiceImpl implements CartService {
         cartRepository.save(cart);
 
         log.info("User [{}] đã xóa CartItem [{}] khỏi giỏ hàng.", user.getEmail(), itemId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<CartItemCheckoutResponse> getCheckoutItems(List<Long> cartItemIds) {
+        User user = userService.getCurrentAuthenticatedUser();
+
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Giỏ hàng không tồn tại!"));
+
+        List<CartItem> items = cartItemRepository.findByIdInAndCart_Id(cartItemIds, cart.getId());
+
+        if (items.size() != cartItemIds.size()) {
+            throw new RuntimeException("Dữ liệu giỏ hàng không hợp lệ.");
+        }
+
+        return items.stream().map(item -> CartItemCheckoutResponse.builder()
+                .cartItemId(item.getId())
+                .variantId(item.getVariant().getId())
+                .skuCode(item.getVariant().getSkuCode())
+                .productName(item.getVariant().getProduct().getName())
+                .variantName(item.getVariant().getVariantName())
+                .thumbnailUrl(item.getVariant().getProduct().getThumbnailUrl())
+                .quantity(item.getQuantity())
+                .unitPrice(item.getVariant().getPrice())
+                .build()).toList();
+    }
+
+    @Override
+    @Transactional
+    public void clearCheckedOutItems(List<Long> cartItemIds) {
+        User user = userService.getCurrentAuthenticatedUser();
+
+        Cart cart = cartRepository.findByUser(user)
+                .orElseThrow(() -> new RuntimeException("Giỏ hàng không tồn tại!"));
+
+        cart.getItems().removeIf(item -> cartItemIds.contains(item.getId()));
+
+        cartRepository.save(cart);
+
+        log.info("Đã dọn dẹp {} sản phẩm khỏi giỏ hàng của User [{}] sau khi đặt hàng.", cartItemIds.size(), user.getEmail());
     }
 }

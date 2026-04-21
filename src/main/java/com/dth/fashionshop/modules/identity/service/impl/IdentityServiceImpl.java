@@ -13,6 +13,7 @@ import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.IdentityService;
 import com.dth.fashionshop.modules.identity.service.JwtService;
 import com.dth.fashionshop.shared.email.EmailService;
+import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -86,7 +87,7 @@ public class IdentityServiceImpl implements IdentityService{
         log.info("Đang xác thực OTP cho email: {}", request.getEmail());
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email này"));
 
         if(user.getStatus() == UserStatus.ACTIVE){
             throw new RuntimeException("Tài khoản này đã được kích hoạt từ trước!");
@@ -113,7 +114,7 @@ public class IdentityServiceImpl implements IdentityService{
         log.info("Yêu cầu gửi lại OTP cho email: {}", request.getEmail());
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản với email này!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản với email này!"));
 
         if (user.getStatus() == UserStatus.ACTIVE) {
             throw new RuntimeException("Tài khoản này đã được kích hoạt! Vui lòng đăng nhập.");
@@ -158,7 +159,7 @@ public class IdentityServiceImpl implements IdentityService{
         }
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản!"));
 
         String jwtToken = jwtService.generateToken(user);
         log.info("Đăng nhập thành công, đã cấp Token cho: {}", user.getEmail());
@@ -189,7 +190,7 @@ public class IdentityServiceImpl implements IdentityService{
         log.info("Xử lý yêu cầu quên mật khẩu cho email: {}", request.getEmail());
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy email trong hệ thống"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy email trong hệ thống"));
 
         if (user.getStatus() == UserStatus.LOCKED) {
             throw new RuntimeException("Tài khoản của bạn đang bị khóa, không thể cấp lại mật khẩu. Vui lòng liên hệ Admin!");
@@ -225,7 +226,7 @@ public class IdentityServiceImpl implements IdentityService{
         log.info("Xác thực OTP khôi phục mật khẩu cho email: {}", request.getEmail());
 
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản!"));
 
         if (user.getStatus() == UserStatus.LOCKED) {
             throw new RuntimeException("Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với Admin!");
@@ -281,7 +282,7 @@ public class IdentityServiceImpl implements IdentityService{
 
         String email = jwtService.extractEmail(token);
         User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy tài khoản!"));
 
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);

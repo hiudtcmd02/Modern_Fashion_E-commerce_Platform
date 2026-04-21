@@ -9,6 +9,7 @@ import com.dth.fashionshop.modules.identity.enums.UserStatus;
 import com.dth.fashionshop.modules.identity.repository.AddressRepository;
 import com.dth.fashionshop.modules.identity.repository.UserRepository;
 import com.dth.fashionshop.modules.identity.service.AdminUserService;
+import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -60,7 +61,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     public void toggleUserStatus(Long userId) {
 
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy người dùng này!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng này!"));
 
         boolean isTargetAdmin = user.getRoles().stream()
                 .anyMatch(role -> role.getName().contains("ROLE_ADMIN"));
@@ -84,7 +85,7 @@ public class AdminUserServiceImpl implements AdminUserService {
     public UserDetailAdminResponse getUserDetailById(Long id) {
 
         User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy thông tin người dùng này!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy thông tin người dùng này!"));
 
         List<AddressResponse> addresses = addressRepository
                 .findByUserAndIsDeletedFalseOrderByIsDefaultDescCreatedAtDesc(user)

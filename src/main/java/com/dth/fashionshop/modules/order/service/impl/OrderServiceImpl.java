@@ -9,17 +9,23 @@ import com.dth.fashionshop.modules.identity.service.AddressService;
 import com.dth.fashionshop.modules.identity.service.UserService;
 import com.dth.fashionshop.modules.order.dto.request.CheckoutPreviewRequest;
 import com.dth.fashionshop.modules.order.dto.request.CreateOrderRequest;
-import com.dth.fashionshop.modules.order.dto.response.CheckoutPreviewResponse;
-import com.dth.fashionshop.modules.order.dto.response.OrderResponse;
+import com.dth.fashionshop.modules.order.dto.response.*;
 import com.dth.fashionshop.modules.order.entity.Order;
 import com.dth.fashionshop.modules.order.entity.OrderDetail;
 import com.dth.fashionshop.modules.order.enums.OrderStatus;
+import com.dth.fashionshop.modules.order.enums.OrderTab;
+import com.dth.fashionshop.modules.order.enums.PaymentMethod;
 import com.dth.fashionshop.modules.order.enums.PaymentStatus;
 import com.dth.fashionshop.modules.order.repository.OrderRepository;
 import com.dth.fashionshop.modules.order.service.OrderService;
+import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +45,72 @@ public class OrderServiceImpl implements OrderService {
     @Value("${app.order.default-shipping-fee:30000}")
     private Long defaultShippingFee;
 
+    private OrderResponse mapToOrderResponse(Order order, String message) {
+        return OrderResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .finalAmount(order.getFinalAmount())
+                .orderStatus(order.getOrderStatus())
+                .paymentMethod(order.getPaymentMethod())
+                .message(message)
+                .build();
+    }
+
+    private OrderListResponse mapToOrderListResponse(Order order) {
+        List<OrderItemResponse> items = order.getOrderDetails().stream()
+                .limit(2)
+                .map(this::mapToOrderItemResponse)
+                .toList();
+
+        return OrderListResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .orderStatus(order.getOrderStatus())
+                .paymentStatus(order.getPaymentStatus())
+                .finalAmount(order.getFinalAmount())
+                .createdAt(order.getCreatedAt())
+                .items(items)
+                .totalItems(order.getOrderDetails().size())
+                .build();
+    }
+
+    private OrderDetailResponse mapToOrderDetailResponse(Order order) {
+        List<OrderItemResponse> allItems = order.getOrderDetails().stream()
+                .map(this::mapToOrderItemResponse)
+                .toList();
+
+        return OrderDetailResponse.builder()
+                .id(order.getId())
+                .orderCode(order.getOrderCode())
+                .orderStatus(order.getOrderStatus())
+                .paymentStatus(order.getPaymentStatus())
+                .paymentMethod(order.getPaymentMethod())
+                .receiverName(order.getReceiverName())
+                .receiverPhone(order.getReceiverPhone())
+                .shippingAddress(order.getShippingAddress())
+                .customerNote(order.getCustomerNote())
+                .totalAmount(order.getTotalAmount())
+                .shippingFee(order.getShippingFee())
+                .finalAmount(order.getFinalAmount())
+                .createdAt(order.getCreatedAt())
+                .items(allItems)
+                .build();
+    }
+
+    private OrderItemResponse mapToOrderItemResponse(OrderDetail detail) {
+        return OrderItemResponse.builder()
+                .variantId(detail.getVariant().getId())
+                .skuCode(detail.getVariant().getSkuCode())
+                .productName(detail.getVariant().getProduct().getName())
+                .variantName(detail.getVariant().getVariantName())
+                .thumbnailUrl(detail.getVariant().getProduct().getThumbnailUrl())
+                .unitPrice(detail.getPrice())
+                .quantity(detail.getQuantity())
+                .subtotal(detail.getSubtotal())
+                .build();
+    }
+
+    // Hàm lấy thông tin để hiển thị ra trang checkout
     @Override
     @Transactional(readOnly = true)
     public CheckoutPreviewResponse previewOrder(CheckoutPreviewRequest request) {
@@ -141,13 +213,76 @@ public class OrderServiceImpl implements OrderService {
 
         log.info("User [{}] đã tạo thành công Đơn hàng ID [{}] với giá trị {} VNĐ", user.getEmail(), savedOrder.getId(), savedOrder.getFinalAmount());
 
-        return OrderResponse.builder()
-                .id(savedOrder.getId())
-                .orderCode(savedOrder.getOrderCode())
-                .finalAmount(savedOrder.getFinalAmount())
-                .orderStatus(savedOrder.getOrderStatus())
-                .paymentMethod(savedOrder.getPaymentMethod())
-                .message("Đặt hàng thành công!")
-                .build();
+        return mapToOrderResponse(savedOrder, "Đặt hàng thành công!");
+    }
+
+    // Hàm lấy danh sách đơn đặt hàng của khách hàng theo tab trạng thái
+    @Override
+    @Transactional(readOnly = true)
+    public Page<OrderListResponse> getMyOrders(OrderTab tab, int page, int size) {
+        User user = userService.getCurrentAuthenticatedUser();
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+
+        Page<Order> orderPage;
+
+        if (tab == OrderTab.WAITING_PAYMENT) {
+            orderPage = orderRepository.findByUserAndOrderStatusAndPaymentStatusAndPaymentMethod(
+                    user, OrderStatus.PENDING, PaymentStatus.UNPAID, PaymentMethod.VNPAY, pageable);
+        } else if (tab == OrderTab.ALL) {
+            orderPage = orderRepository.findByUser(user, pageable);
+        } else {
+            // Ép kiểu ngược từ OrderTab sang OrderStatus vì chúng có tên giống hệt nhau
+            OrderStatus status = OrderStatus.valueOf(tab.name());
+            orderPage = orderRepository.findByUserAndOrderStatus(user, status, pageable);
+        }
+
+        return orderPage.map(this::mapToOrderListResponse);
+    }
+
+    // Hàm load lại thông tin đặt hàng thành công
+    @Override
+    @Transactional(readOnly = true)
+    public OrderResponse getOrderSuccessInfo(String orderCode) {
+        User user = userService.getCurrentAuthenticatedUser();
+        Order order = orderRepository.findByOrderCodeAndUser(orderCode, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng!"));
+
+        return mapToOrderResponse(order, "Truy xuất thông tin thành công");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public OrderDetailResponse getOrderDetail(String orderCode) {
+        User user = userService.getCurrentAuthenticatedUser();
+        Order order = orderRepository.findByOrderCodeAndUser(orderCode, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng!"));
+
+        return mapToOrderDetailResponse(order);
+    }
+
+    @Override
+    @Transactional
+    public void cancelOrder(Long orderId) {
+        User user = userService.getCurrentAuthenticatedUser();
+
+        Order order = orderRepository.findByIdAndUserWithLock(orderId, user)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy đơn hàng!"));
+
+        if (order.getOrderStatus() != OrderStatus.PENDING && order.getOrderStatus() != OrderStatus.PROCESSING) {
+            throw new RuntimeException("Đơn hàng đã được xử lý hoặc vận chuyển, không thể hủy!");
+        }
+
+        if (order.getPaymentStatus() == PaymentStatus.PAID) {
+            throw new RuntimeException("Đơn hàng đã thanh toán. Vui lòng liên hệ cửa hàng để được hỗ trợ hủy và hoàn tiền.");
+        }
+
+        for (OrderDetail detail : order.getOrderDetails()) {
+            productService.increaseStockWithLock(detail.getVariant().getId(), detail.getQuantity());
+        }
+
+        order.setOrderStatus(OrderStatus.CANCELLED);
+        orderRepository.save(order);
+
+        log.info("Người dùng {} đã hủy đơn hàng mã: {}", user.getEmail(), order.getOrderCode());
     }
 }

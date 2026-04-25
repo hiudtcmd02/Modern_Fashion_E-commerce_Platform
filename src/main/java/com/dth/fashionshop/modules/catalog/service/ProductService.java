@@ -45,4 +45,6 @@ public interface ProductService {
     ProductVariant getVariantEntityBySku(String skuCode);
 
     void decreaseStockWithLock(Long variantId, Integer quantity);
+
+    void increaseStockWithLock(Long variantId, Integer quantity);
 }

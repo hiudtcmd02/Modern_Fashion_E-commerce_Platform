@@ -421,4 +421,18 @@ public class ProductServiceImpl implements ProductService {
         variantRepository.save(variant);
         log.info("SKU [{}] đã trừ kho {}, còn lại {}", variant.getSkuCode(), quantity, variant.getStockQuantity());
     }
+
+    // Hàm hoàn lại tồn kho
+    @Override
+    @Transactional
+    public void increaseStockWithLock(Long variantId, Integer quantity) {
+        ProductVariant variant = variantRepository.findByIdWithLock(variantId)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy phân loại sản phẩm"));
+
+        variant.setStockQuantity(variant.getStockQuantity() + quantity);
+        variantRepository.save(variant);
+
+        log.info("SKU [{}] đã được hoàn lại {} sản phẩm vào kho. Tồn kho mới: {}",
+                variant.getSkuCode(), quantity, variant.getStockQuantity());
+    }
 }

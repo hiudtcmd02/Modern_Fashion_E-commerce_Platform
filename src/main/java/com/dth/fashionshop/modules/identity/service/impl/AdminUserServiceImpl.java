@@ -102,8 +102,6 @@ public class AdminUserServiceImpl implements AdminUserService {
                         .build())
                 .collect(Collectors.toList());
 
-        // (TODO) - Gọi sang OrderRepository để lấy 5 đơn hàng gần nhất
-        // VD: List<Order> orders = orderRepository.findTop5ByUserOrderByCreatedAtDesc(user);
 
         return UserDetailAdminResponse.builder()
                 .id(user.getId())

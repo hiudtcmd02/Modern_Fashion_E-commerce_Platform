@@ -62,6 +62,10 @@ public class UserServiceImpl implements UserService {
     public UserProfileResponse updateProfile(UpdateProfileRequest request) {
         User user = getCurrentAuthenticatedUser();
 
+        if(userRepository.existsByPhoneNumberAndIdNot(request.getPhoneNumber(), user.getId())){
+            throw new RuntimeException("Số điện thoại này đã được tài khoản khác sử dụng!");
+        }
+
         user.setFullName(request.getFullName());
         user.setPhoneNumber(request.getPhoneNumber());
         user.setGender(request.getGender());
@@ -75,6 +79,11 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserProfileResponse uploadAvatar(MultipartFile file) {
+
+        if (file == null || file.isEmpty()) {
+            throw new RuntimeException("Vui lòng chọn ảnh hợp lệ để tải lên!");
+        }
+
         User user = getCurrentAuthenticatedUser();
 
         if (user.getAvatarUrl() != null) {

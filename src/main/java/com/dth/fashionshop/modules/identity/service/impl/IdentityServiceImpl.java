@@ -30,6 +30,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.Random;
+import java.util.Set;
 
 @Service
 @RequiredArgsConstructor
@@ -67,7 +68,7 @@ public class IdentityServiceImpl implements IdentityService{
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .phoneNumber(request.getPhoneNumber())
-                .roles(java.util.Set.of(customerRole))
+                .roles(Set.of(customerRole))
                 .status(UserStatus.INACTIVE)
                 .otpCode(otpCode)
                 .otpExpiryTime(LocalDateTime.now().plusMinutes(5))
@@ -271,7 +272,7 @@ public class IdentityServiceImpl implements IdentityService{
     @Override
     public void resetPassword(String token, ResetPasswordRequest request) {
 
-        if (invalidatedTokenRepository.existsById(token)) {
+        if (isTokenInvalidated(token)) {
             throw new RuntimeException("Token khôi phục này đã được sử dụng hoặc không còn hợp lệ!");
         }
 

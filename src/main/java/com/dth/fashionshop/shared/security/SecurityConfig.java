@@ -53,7 +53,10 @@ public class SecurityConfig {
                                 "/api/v1/identity/forgot-password",
                                 "/api/v1/identity/reset-password",
                                 "/api/v1/identity/verify-reset-otp",
-                                "/error"
+                                "/error",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
                         ).permitAll()
 
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()

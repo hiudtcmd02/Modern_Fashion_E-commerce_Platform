@@ -6,6 +6,7 @@ import com.dth.fashionshop.modules.catalog.entity.Category;
 import com.dth.fashionshop.modules.catalog.repository.CategoryRepository;
 import com.dth.fashionshop.modules.catalog.repository.ProductRepository;
 import com.dth.fashionshop.modules.catalog.service.CategoryService;
+import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import com.dth.fashionshop.shared.utils.StringUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,7 +49,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Override
     public CategoryResponse getCategoryById(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục!"));
         return mapToResponse(category);
     }
 
@@ -87,7 +88,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryResponse updateCategory(Long id, CategoryRequest request, MultipartFile file) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục!"));
 
         String safeSlug = StringUtils.generateSlug(request.getSlug());
 
@@ -120,13 +121,13 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void deleteCategory(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục!"));
 
         long activeProductsCount = productRepository.countByCategory_IdAndIsDeletedFalse(id);
 
         if (activeProductsCount > 0) {
-            log.warn("Cảnh báo an ninh: Admin cố tình xóa danh mục {} đang có {} sản phẩm", category.getName(), activeProductsCount);
-            throw new RuntimeException("Không thể xóa! Danh mục này đang chứa " + activeProductsCount + " sản phẩm. Vui lòng chuyển hết sản phẩm sang danh mục khác trước khi xóa.");
+            log.warn("Cảnh báo an ninh: Admin cố tình xóa danh mục {} đang có {} sản phẩm đang kinh doanh", category.getName(), activeProductsCount);
+            throw new RuntimeException("Không thể xóa! Danh mục này đang chứa " + activeProductsCount + " sản phẩm đang kinh doanh. Vui lòng chuyển hết sản phẩm sang danh mục khác trước khi xóa.");
         }
 
         if (category.getIsDeleted()) {
@@ -142,7 +143,7 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryResponse restoreCategory(Long id) {
         Category category = categoryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy danh mục!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy danh mục!"));
 
         if (!category.getIsDeleted()) {
             throw new RuntimeException("Danh mục này vẫn đang hoạt động, không cần khôi phục!");

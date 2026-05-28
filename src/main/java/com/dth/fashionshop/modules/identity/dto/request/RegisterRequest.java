@@ -1,5 +1,8 @@
 package com.dth.fashionshop.modules.identity.dto.request;
 
+import com.fasterxml.jackson.databind.PropertyNamingStrategies;
+import com.fasterxml.jackson.databind.annotation.JsonNaming;
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Pattern;
@@ -7,6 +10,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 @Data
+@JsonNaming(PropertyNamingStrategies.SnakeCaseStrategy.class)
 public class RegisterRequest {
 
     @NotBlank(message = "Họ và tên không được để trống")
@@ -20,6 +24,7 @@ public class RegisterRequest {
     @Size(min = 6, message = "Mật khẩu phải có ít nhất 6 ký tự")
     private String password;
 
+    @Schema(example = "0338542155")
     @NotBlank(message = "Số điện thoại không được để trống")
     @Pattern(regexp = "^(0[3|5|7|8|9])+([0-9]{8})$", message = "Số điện thoại không hợp lệ (Phải là đầu số Việt Nam 10 số)")
     private String phoneNumber;

@@ -20,6 +20,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByPhoneNumber(String phoneNumber);
 
+    boolean existsByPhoneNumberAndIdNot(String phoneNumber, Long id);
+
     @Query("SELECT u FROM User u WHERE " +
             "(:keyword IS NULL OR :keyword = '' " +
             "   OR LOWER(u.fullName) LIKE LOWER(CONCAT('%', :keyword, '%')) " +

@@ -90,7 +90,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public ProductDetailResponse getProductById(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm!"));
         return mapToDetailResponse(product);
     }
 
@@ -170,7 +170,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public void deleteProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm!"));
 
         if (product.getIsDeleted()) {
             throw new RuntimeException("Sản phẩm này đã bị xóa rồi!");
@@ -187,7 +187,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional
     public ProductDetailResponse restoreProduct(Long id) {
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm!"));
 
         if (!product.getIsDeleted()) {
             throw new RuntimeException("Sản phẩm vẫn đang hoạt động, không cần khôi phục!");
@@ -207,7 +207,7 @@ public class ProductServiceImpl implements ProductService {
     public ProductDetailResponse updateProduct(Long id, ProductRequest request, MultipartFile thumbnail, List<MultipartFile> images) {
 
         Product product = productRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm!"));
 
         String safeSlug = StringUtils.generateSlug(request.getSlug());
         if (productRepository.existsBySlugAndIdNot(safeSlug, id)) {
@@ -300,7 +300,7 @@ public class ProductServiceImpl implements ProductService {
     public void deleteProductImage(Long imageId) {
 
         ProductImage image = productImageRepository.findById(imageId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy hình ảnh phụ này để xóa!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy hình ảnh phụ này để xóa!"));
 
         mediaService.deleteImage(image.getImageUrl());
 
@@ -313,7 +313,7 @@ public class ProductServiceImpl implements ProductService {
     @Transactional(readOnly = true)
     public List<VariantResponse> getVariantsByProductId(Long productId) {
         Product product = productRepository.findById(productId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy sản phẩm!"));
 
         return product.getVariants().stream()
                 .map(this::mapToVariantResponse)
@@ -329,7 +329,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         ProductVariant variant = variantRepository.findById(variantId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã SKU này!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy mã SKU này!"));
 
         variant.setStockQuantity(newStock);
         ProductVariant savedVariant = variantRepository.save(variant);
@@ -347,7 +347,7 @@ public class ProductServiceImpl implements ProductService {
         }
 
         ProductVariant variant = variantRepository.findById(variantId)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy mã SKU này!"));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy mã SKU này!"));
 
         variant.setIsActive(isActive);
         ProductVariant savedVariant = variantRepository.save(variant);

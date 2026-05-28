@@ -73,9 +73,11 @@ public class AdminUserServiceImpl implements AdminUserService {
         if (user.getStatus() == UserStatus.LOCKED) {
             user.setStatus(UserStatus.ACTIVE);
             log.info("Admin đã MỞ KHÓA cho tài khoản: {}", user.getEmail());
-        } else {
+        } else if (user.getStatus() == UserStatus.ACTIVE) {
             user.setStatus(UserStatus.LOCKED);
             log.info("Admin đã KHÓA tài khoản: {}", user.getEmail());
+        } else {
+            throw new RuntimeException("Tài khoản này hiện chưa thực hiện xác thực email, không thể thay đổi trạng thái tài khoản");
         }
 
         userRepository.save(user);

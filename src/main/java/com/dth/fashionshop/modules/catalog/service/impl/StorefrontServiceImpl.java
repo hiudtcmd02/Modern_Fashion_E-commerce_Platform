@@ -46,6 +46,24 @@ public class StorefrontServiceImpl implements StorefrontService {
                 .build();
     }
 
+    private ProductGuestResponse mapToFilteredProductGuestResponse(Product product, Long minPrice, Long maxPrice) {
+        LongSummaryStatistics priceStats = product.getVariants().stream()
+                .filter(ProductVariant::getIsActive)
+                .filter(v -> minPrice == null || v.getPrice() >= minPrice)
+                .filter(v -> maxPrice == null || v.getPrice() <= maxPrice)
+                .mapToLong(ProductVariant::getPrice)
+                .summaryStatistics();
+
+        return ProductGuestResponse.builder()
+                .id(product.getId())
+                .name(product.getName())
+                .slug(product.getSlug())
+                .thumbnailUrl(product.getThumbnailUrl())
+                .minPrice(priceStats.getCount() > 0 ? priceStats.getMin() : 0L)
+                .maxPrice(priceStats.getCount() > 0 ? priceStats.getMax() : 0L)
+                .build();
+    }
+
     @Transactional(readOnly = true)
     @Override
     public List<CategoryGuestResponse> getAllActiveCategories() {
@@ -100,7 +118,7 @@ public class StorefrontServiceImpl implements StorefrontService {
         Page<Product> productPage = productRepository.searchStorefrontProducts(
                 keyword, categoryId, minPrice, maxPrice, sort, pageRequest);
 
-        return productPage.map(this::mapToProductGuestResponse);
+        return productPage.map(product -> mapToFilteredProductGuestResponse(product, minPrice, maxPrice));
     }
 
     @Override

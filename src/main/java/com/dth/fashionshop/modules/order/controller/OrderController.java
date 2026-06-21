@@ -18,6 +18,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Map;
 
@@ -41,9 +42,10 @@ public class OrderController {
     @Operation(summary = "Khách hàng đặt hàng và tạo đơn hàng")
     @PostMapping
     public ResponseEntity<OrderResponse> createOrder(
+            HttpServletRequest httpServletRequest,
             @Valid @RequestBody CreateOrderRequest request) {
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrder(request, httpServletRequest));
     }
 
     @Operation(summary = "Lấy thông tin đơn hàng để hiển thị/ reload trang thông báo đặt hàng thành công (Success)")

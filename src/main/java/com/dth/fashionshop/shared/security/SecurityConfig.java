@@ -62,6 +62,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.GET, "/api/v1/categories/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
 
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay-ipn").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v1/payments/vnpay-return").permitAll()
+
                         .anyRequest().authenticated()
                 )
                 .addFilterBefore(jwtAuthFilter, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)

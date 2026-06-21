@@ -63,4 +63,23 @@ public class EmailService {
             log.error("Lỗi khi gửi email đến {}: {}", toEmail, e.getMessage());
         }
     }
+
+    // Hàm gửi email chung (Dùng cho cảnh báo hệ thống, thông báo lỗi...)
+    @Async
+    public void sendEmail(String toEmail, String subject, String text) {
+        try {
+            log.info("Bắt đầu gửi Email thông báo đến: {}", toEmail);
+
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setTo(toEmail);
+            message.setSubject(subject);
+            message.setText(text);
+
+            javaMailSender.send(message);
+
+            log.info("Đã gửi Email thành công đến: {}", toEmail);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi email đến {}: {}", toEmail, e.getMessage());
+        }
+    }
 }

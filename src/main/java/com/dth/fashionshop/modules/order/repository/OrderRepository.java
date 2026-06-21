@@ -14,6 +14,9 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
+
 import java.util.Optional;
 
 @Repository
@@ -63,4 +66,18 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT o FROM Order o WHERE o.id = :id")
     Optional<Order> findByIdWithLockForAdmin(@Param("id") Long id);
+
+    // Truy vấn tìm các đơn hàng VNPAY bị treo quá thời gian quy định
+    @Query("SELECT o FROM Order o WHERE o.orderStatus = 'PENDING' " +
+            "AND o.paymentStatus = 'UNPAID' " +
+            "AND o.paymentMethod = 'VNPAY' " +
+            "AND o.createdAt < :cutoffTime")
+    List<Order> findExpiredVnpayOrders(@Param("cutoffTime") LocalDateTime cutoffTime);
+
+    // Truy vấn lấy danh sách ID của các đơn hàng VNPAY bị treo quá thời gian quy định
+    @Query("SELECT o.id FROM Order o WHERE o.orderStatus = 'PENDING' " +
+            "AND o.paymentStatus = 'UNPAID' " +
+            "AND o.paymentMethod = 'VNPAY' " +
+            "AND o.createdAt < :cutoffTime")
+    List<Long> findExpiredVnpayOrderIds(@Param("cutoffTime") LocalDateTime cutoffTime);
 }

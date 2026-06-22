@@ -29,6 +29,12 @@ A robust, scalable, and feature-rich RESTful API built specifically for a clothi
 * **Data Integrity:** Strict validation between frontend expected price and backend actual database price to prevent data manipulation.
 * **Inventory Rollback:** Automatically restore variant stock if an order is cancelled or returned.
 
+### 💳 Payment Integration (VNPAY)
+* **Secure Transaction:** HMAC-SHA512 checksum validation to prevent data tampering.
+* **Reliable IPN Webhook:** Server-to-server communication ensuring accurate payment status updates even if the user drops the session.
+* **Edge Case Handling:** Built-in safeguards against Double Payments, Data Loss, and Network Latency (Compensating transactions with automated email alerts for manual refunds).
+* **Salvage Logic:** Gracefully recover abandoned payment sessions if the user retries within the gateway's timeout window.
+
 ## 🛠️ Tech Stack
 
 * **Core:** Java 17, Spring Boot 4.0.3
@@ -36,7 +42,7 @@ A robust, scalable, and feature-rich RESTful API built specifically for a clothi
 * **Database:** MySQL 8.0.34
 * **Security:** Spring Security, JWT (JSON Web Token)
 * **Documentation:** SpringDoc OpenAPI 3 (Swagger UI)
-* **Third-Party Services:** Cloudinary (Image Hosting), JavaMailSender (SMTP Email)
+* **Third-Party Services:** Cloudinary (Image Hosting), JavaMailSender (SMTP Email), VNPAY API (Online Payment), Ngrok (Exposes local server to connect the IPN Webhook with VNPAY Sandbox)
 * **Architecture:** Modular Monolith (Identity, Catalog, Cart, Order)
 
 ## 📖 API Documentation (Swagger UI)
@@ -54,6 +60,7 @@ The API is fully documented using OpenAPI 3 specifications. It includes detailed
 * MySQL Server 8.x
 * Cloudinary Account (Free tier)
 * Gmail Account (for SMTP App Password)
+* VNPAY Sandbox Account & Ngrok (To expose local server for VNPAY IPN Webhook configuration).
 
 ### Installation
 
@@ -78,6 +85,11 @@ The API is fully documented using OpenAPI 3 specifications. It includes detailed
     CLOUDINARY_CLOUD_NAME=your_cloud_name
     CLOUDINARY_API_KEY=your_api_key
     CLOUDINARY_API_SECRET=your_api_secret
+    
+    VNPAY_TMN_CODE=your_vnpay_tmn_code
+    VNPAY_HASH_SECRET=your_vnpay_hash_secret
+    VNPAY_PAY_URL=your_vnpay_pay_url
+    VNPAY_RETURN_URL=your_vnpay_return_url
     ```
 
 3.  **Build and Run:**
@@ -86,9 +98,15 @@ The API is fully documented using OpenAPI 3 specifications. It includes detailed
     mvn spring-boot:run
     ```
 
+4.  **Configure VNPAY IPN (Webhook):**
+    * Start Ngrok to expose your backend port (e.g., `ngrok http 8080`).
+    * Copy the public HTTPS URL provided by Ngrok.
+    * Log in to your **VNPAY Sandbox Merchant Portal**.
+    * Navigate to your system configuration section and paste the IPN URL in the following format: `<your-ngrok-subdomain>/api/v1/payments/vnpay-ipn`.
+
 ## 🗺️ Roadmap (Upcoming Features)
 
-- [ ] **Online Payment Integration:** VNPAY gateway integration via Webhooks/IPN.
+- [x] **Online Payment Integration:** VNPAY gateway integration via Webhooks/IPN.
 - [ ] **Promotion Engine:** Voucher management system (Percentage/Fixed discount, Usage limits).
 - [ ] **Customer Interactions:** Product Ratings, Reviews, and Wishlist.
 - [ ] **Admin Dashboard:** Revenue and Sales statistical charts.

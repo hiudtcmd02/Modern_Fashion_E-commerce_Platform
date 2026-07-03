@@ -35,6 +35,11 @@ A robust, scalable, and feature-rich RESTful API built specifically for a clothi
 * **Edge Case Handling:** Built-in safeguards against Double Payments, Data Loss, and Network Latency (Compensating transactions with automated email alerts for manual refunds).
 * **Salvage Logic:** Gracefully recover abandoned payment sessions if the user retries within the gateway's timeout window.
 
+### 📊 Statistics & Dashboard Module
+* **KPI Insights:** Real-time revenue analytics, order status, new user growth, and low-stock alerts.
+* **Revenue Analytics:** Interactive charts (Bar/Line) tracking revenue by Day or Month with automatic data filling (Zero-filling) for empty intervals.
+* **Product Performance:** Detailed report on best-selling and slowest-selling products with dynamic filtering and sorting.
+
 ## 🛠️ Tech Stack
 
 * **Core:** Java 17, Spring Boot 4.0.3
@@ -109,7 +114,7 @@ The API is fully documented using OpenAPI 3 specifications. It includes detailed
 - [x] **Online Payment Integration:** VNPAY gateway integration via Webhooks/IPN.
 - [ ] **Promotion Engine:** Voucher management system (Percentage/Fixed discount, Usage limits).
 - [ ] **Customer Interactions:** Product Ratings, Reviews, and Wishlist.
-- [ ] **Admin Dashboard:** Revenue and Sales statistical charts.
+- [x] **Admin Dashboard:** Revenue and Sales statistical charts.
 
 ## 👨‍💻 Author
 

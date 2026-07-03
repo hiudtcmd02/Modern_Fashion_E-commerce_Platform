@@ -23,6 +23,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -193,6 +194,32 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
         orderRepository.save(order);
         log.info("Admin đã cập nhật thành công đơn hàng {}: {} - {}", order.getOrderCode(), newOrderStatus, newPaymentStatus);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long calculateTotalRevenue(LocalDateTime startDate, LocalDateTime endDate) {
+        Long revenue = orderRepository.calculateTotalRevenue(startDate, endDate);
+        return revenue != null ? revenue : 0L;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long countCompletedOrders(LocalDateTime startDate, LocalDateTime endDate) {
+        Long count = orderRepository.countCompletedOrders(startDate, endDate);
+        return count != null ? count : 0L;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Object[]> getRevenueByDay(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderRepository.getRevenueByDay(startDate, endDate);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Object[]> getRevenueByMonth(LocalDateTime startDate, LocalDateTime endDate) {
+        return orderRepository.getRevenueByMonth(startDate, endDate);
     }
 
     private boolean isValidOrderTransition(OrderStatus oldStatus, OrderStatus newStatus) {

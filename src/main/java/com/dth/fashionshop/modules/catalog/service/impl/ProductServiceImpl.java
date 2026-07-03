@@ -13,6 +13,7 @@ import com.dth.fashionshop.modules.catalog.repository.ProductImageRepository;
 import com.dth.fashionshop.modules.catalog.repository.ProductRepository;
 import com.dth.fashionshop.modules.catalog.repository.ProductVariantRepository;
 import com.dth.fashionshop.modules.catalog.service.ProductService;
+import com.dth.fashionshop.modules.statistics.dto.response.ProductSalesResponse;
 import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import com.dth.fashionshop.shared.media.MediaService;
 import com.dth.fashionshop.shared.utils.StringUtils;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -434,5 +436,22 @@ public class ProductServiceImpl implements ProductService {
 
         log.info("SKU [{}] đã được hoàn lại {} sản phẩm vào kho. Tồn kho mới: {}",
                 variant.getSkuCode(), quantity, variant.getStockQuantity());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long countLowStockVariants() {
+        Long count = variantRepository.countLowStockVariants();
+        return count != null ? count : 0L;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ProductSalesResponse> getProductSalesAnalytics(
+            LocalDateTime startDate, LocalDateTime endDate, String sortDirection, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        return productRepository.getProductSalesAnalytics(startDate, endDate, sortDirection, pageable);
     }
 }

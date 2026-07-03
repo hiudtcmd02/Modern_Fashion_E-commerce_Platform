@@ -4,9 +4,11 @@ import com.dth.fashionshop.modules.catalog.dto.request.ProductFilterRequest;
 import com.dth.fashionshop.modules.catalog.dto.request.ProductRequest;
 import com.dth.fashionshop.modules.catalog.dto.response.*;
 import com.dth.fashionshop.modules.catalog.entity.ProductVariant;
+import com.dth.fashionshop.modules.statistics.dto.response.ProductSalesResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface ProductService {
@@ -47,4 +49,14 @@ public interface ProductService {
     void decreaseStockWithLock(Long variantId, Integer quantity);
 
     void increaseStockWithLock(Long variantId, Integer quantity);
+
+    Long countLowStockVariants();
+
+    Page<ProductSalesResponse> getProductSalesAnalytics(
+            LocalDateTime startDate,
+            LocalDateTime endDate,
+            String sortDirection,
+            int page,
+            int size
+    );
 }

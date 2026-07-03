@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 @Repository
@@ -33,4 +34,8 @@ public interface UserRepository extends JpaRepository<User, Long> {
             @Param("status") UserStatus status,
             Pageable pageable
     );
+
+    // Hàm đếm khách hàng mới
+    @Query("SELECT COUNT(u) FROM User u JOIN u.roles r WHERE r.name = 'ROLE_CUSTOMER' AND u.createdAt >= :startDate AND u.createdAt <= :endDate")
+    Long countNewCustomers(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }

@@ -4,6 +4,7 @@ import com.dth.fashionshop.modules.catalog.dto.request.ProductFilterRequest;
 import com.dth.fashionshop.modules.catalog.dto.response.ProductListAdminResponse;
 import com.dth.fashionshop.modules.catalog.entity.Product;
 import com.dth.fashionshop.modules.catalog.repository.ProductRepositoryCustom;
+import com.dth.fashionshop.modules.statistics.dto.response.ProductSalesResponse;
 import jakarta.persistence.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -185,5 +186,68 @@ public class ProductRepositoryCustomImpl implements ProductRepositoryCustom {
         Long totalElements = countQuery.getSingleResult();
 
         return new PageImpl<>(products, pageable, totalElements != null ? totalElements : 0);
+    }
+
+    @Override
+    public Page<ProductSalesResponse> getProductSalesAnalytics(LocalDateTime startDate, LocalDateTime endDate, String sortDirection, Pageable pageable) {
+        StringBuilder sql = new StringBuilder(
+                "SELECT p.id as productId, p.name as productName, p.thumbnail_url as thumbnailUrl, " +
+                        "p.is_deleted as isDeleted, " +
+                        "COALESCE(SUM(sales.total_qty), 0) as totalSold, " +
+                        "COALESCE(SUM(sales.total_rev), 0) as totalRevenue " +
+                        "FROM products p " +
+                        "LEFT JOIN product_variants pv ON p.id = pv.product_id " +
+                        "LEFT JOIN (" +
+                        "   SELECT od.variant_id, SUM(od.quantity) as total_qty, SUM(od.subtotal) as total_rev " +
+                        "   FROM order_details od " +
+                        "   JOIN orders o ON od.order_id = o.id " +
+                        "   WHERE o.order_status = 'COMPLETED' "
+        );
+
+        Map<String, Object> params = new HashMap<>();
+
+        if (startDate != null && endDate != null) {
+            sql.append("   AND o.created_at >= :startDate AND o.created_at <= :endDate ");
+            params.put("startDate", startDate);
+            params.put("endDate", endDate);
+        }
+
+        sql.append("   GROUP BY od.variant_id ");
+        sql.append(") sales ON pv.id = sales.variant_id ");
+
+        sql.append("GROUP BY p.id, p.name, p.thumbnail_url, p.is_deleted ");
+
+        if ("asc".equalsIgnoreCase(sortDirection)) {
+            sql.append("ORDER BY totalSold ASC ");
+        } else {
+            sql.append("ORDER BY totalSold DESC ");
+        }
+
+        Query query = em.createNativeQuery(sql.toString(), Tuple.class);
+
+        for (Map.Entry<String, Object> entry : params.entrySet()) {
+            query.setParameter(entry.getKey(), entry.getValue());
+        }
+
+        query.setFirstResult((int) pageable.getOffset());
+        query.setMaxResults(pageable.getPageSize());
+
+        List<Tuple> tuples = query.getResultList();
+
+        List<ProductSalesResponse> content = tuples.stream().map(t -> ProductSalesResponse.builder()
+                .productId(((Number) t.get("productId")).longValue())
+                .productName(t.get("productName", String.class))
+                .thumbnailUrl(t.get("thumbnailUrl", String.class))
+                .totalSold(((Number) t.get("totalSold")).longValue())
+                .totalRevenue(((Number) t.get("totalRevenue")).longValue())
+                .isDeleted(t.get("isDeleted", Boolean.class))
+                .build()
+        ).collect(Collectors.toList());
+
+        String countSql = "SELECT COUNT(id) FROM products";
+        Query countQuery = em.createNativeQuery(countSql);
+        long totalElements = ((Number) countQuery.getSingleResult()).longValue();
+
+        return new PageImpl<>(content, pageable, totalElements);
     }
 }

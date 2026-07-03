@@ -19,6 +19,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -120,5 +121,12 @@ public class AdminUserServiceImpl implements AdminUserService {
                         .collect(Collectors.toList()))
                 .addresses(addresses)
                 .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Long countNewCustomers(LocalDateTime startDate, LocalDateTime endDate) {
+        Long count = userRepository.countNewCustomers(startDate, endDate);
+        return count != null ? count : 0L;
     }
 }

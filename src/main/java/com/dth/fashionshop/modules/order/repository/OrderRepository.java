@@ -80,4 +80,28 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "AND o.paymentMethod = 'VNPAY' " +
             "AND o.createdAt < :cutoffTime")
     List<Long> findExpiredVnpayOrderIds(@Param("cutoffTime") LocalDateTime cutoffTime);
+
+    // Hàm tính tổng doanh thu
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM Order o WHERE o.orderStatus = 'COMPLETED' AND o.createdAt >= :startDate AND o.createdAt <= :endDate")
+    Long calculateTotalRevenue(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    // Hàm đếm tổng đơn hoàn thành
+    @Query("SELECT COUNT(o) FROM Order o WHERE o.orderStatus = 'COMPLETED' AND o.createdAt >= :startDate AND o.createdAt <= :endDate")
+    Long countCompletedOrders(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    // Hàm thống kê doanh thu theo ngày
+    @Query(value = "SELECT DATE_FORMAT(created_at, '%d/%m/%Y') as label, SUM(final_amount) as value " +
+            "FROM orders WHERE order_status = 'COMPLETED' " +
+            "AND created_at >= :startDate AND created_at <= :endDate " +
+            "GROUP BY label, DATE(created_at) " +
+            "ORDER BY DATE(created_at) ASC", nativeQuery = true)
+    List<Object[]> getRevenueByDay(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    // Hàm thống kê doanh thu theo tháng
+    @Query(value = "SELECT DATE_FORMAT(created_at, '%m/%Y') as label, SUM(final_amount) as value " +
+            "FROM orders WHERE order_status = 'COMPLETED' " +
+            "AND created_at >= :startDate AND created_at <= :endDate " +
+            "GROUP BY label, DATE_FORMAT(created_at, '%Y-%m') " +
+            "ORDER BY DATE_FORMAT(created_at, '%Y-%m') ASC", nativeQuery = true)
+    List<Object[]> getRevenueByMonth(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
 }

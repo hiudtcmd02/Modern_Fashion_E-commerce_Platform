@@ -5,6 +5,8 @@ import com.dth.fashionshop.modules.identity.dto.response.UserDetailAdminResponse
 import com.dth.fashionshop.modules.identity.enums.UserStatus;
 import org.springframework.data.domain.Page;
 
+import java.time.LocalDateTime;
+
 public interface AdminUserService {
 
     Page<UserAdminResponse> getAllUsers(String keyword, UserStatus status, int page, int size);
@@ -12,4 +14,6 @@ public interface AdminUserService {
     void toggleUserStatus(Long userId);
 
     UserDetailAdminResponse getUserDetailById(Long id);
+
+    Long countNewCustomers(LocalDateTime startDate, LocalDateTime endDate);
 }

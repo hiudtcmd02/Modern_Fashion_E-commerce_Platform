@@ -10,7 +10,7 @@ public final class StringUtils {
         return input.trim().toLowerCase().replaceAll("\\s+", "-");
     }
 
-    // Hàm chuẩn hóa mã Code (SKU, Mã đơn hàng, Mã giảm giá...)
+    // Hàm chuẩn hóa mã Code (SKU, Mã giảm giá...)
     public static String normalizeCode(String code) {
         if (code == null) return null;
         return code.trim().toUpperCase();

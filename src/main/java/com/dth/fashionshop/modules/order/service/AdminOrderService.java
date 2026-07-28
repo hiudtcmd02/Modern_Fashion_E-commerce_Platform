@@ -24,4 +24,6 @@ public interface AdminOrderService {
     List<Object[]> getRevenueByDay(LocalDateTime startDate, LocalDateTime endDate);
 
     List<Object[]> getRevenueByMonth(LocalDateTime startDate, LocalDateTime endDate);
+
+    Long calculateRevenueByVoucherCode(String voucherCode);
 }

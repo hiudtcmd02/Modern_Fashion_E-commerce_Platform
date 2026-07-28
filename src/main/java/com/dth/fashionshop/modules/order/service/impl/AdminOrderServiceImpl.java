@@ -222,6 +222,13 @@ public class AdminOrderServiceImpl implements AdminOrderService {
         return orderRepository.getRevenueByMonth(startDate, endDate);
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Long calculateRevenueByVoucherCode(String voucherCode) {
+        Long revenue = orderRepository.calculateRevenueByVoucherCode(voucherCode);
+        return revenue != null ? revenue : 0L;
+    }
+
     private boolean isValidOrderTransition(OrderStatus oldStatus, OrderStatus newStatus) {
         if (oldStatus == newStatus) return true;
 

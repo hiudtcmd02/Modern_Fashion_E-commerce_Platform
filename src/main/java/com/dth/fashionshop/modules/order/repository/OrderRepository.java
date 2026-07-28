@@ -104,4 +104,8 @@ public interface OrderRepository extends JpaRepository<Order, Long> {
             "GROUP BY label, DATE_FORMAT(created_at, '%Y-%m') " +
             "ORDER BY DATE_FORMAT(created_at, '%Y-%m') ASC", nativeQuery = true)
     List<Object[]> getRevenueByMonth(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
+    // Lấy tổng doanh thu của các đơn hàng đã hoàn thành dựa theo mã voucher
+    @Query("SELECT COALESCE(SUM(o.finalAmount), 0) FROM Order o WHERE o.orderStatus = 'COMPLETED' AND o.voucherCode = :voucherCode")
+    Long calculateRevenueByVoucherCode(@Param("voucherCode") String voucherCode);
 }

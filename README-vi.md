@@ -35,6 +35,12 @@ Hệ thống RESTful API mạnh mẽ, dễ mở rộng được thiết kế chu
 * **Kiểm soát Rủi ro (Edge Cases):** Cấu trúc phòng thủ chặt chẽ chống lại lỗi Thanh toán kép (Double Payments), Mất dữ liệu và Độ trễ mạng (Network Latency) - Tự động phát tín hiệu khẩn cấp bằng Email để Kế toán hoàn tiền bù trừ.
 * **Vớt vát luồng tiền (Salvage Logic):** Khôi phục mượt mà các giao dịch bị khách hàng hủy ngang nhưng lại "quay xe" thanh toán thành công trong thời gian link còn hiệu lực.
 
+### 🎟️ Khuyến mãi & Voucher (Promotion Module)
+* **Đa dạng loại giảm giá:** Hỗ trợ linh hoạt cấu hình Giảm theo phần trăm (kèm mức giảm tối đa) và Giảm theo số tiền cố định.
+* **Kiểm soát Race Condition:** Áp dụng khóa bi quan (`Pessimistic Locking`) dưới Database để ngăn chặn tuyệt đối tình trạng vượt quá giới hạn lượt sử dụng voucher khi có nhiều khách hàng thanh toán cùng 1 tích tắc.
+* **Điều kiện áp dụng khắt khe:** Tự động kiểm tra tính hợp lệ về thời gian (Sắp diễn ra, Đang diễn ra, Đã kết thúc), giá trị đơn hàng tối thiểu và giới hạn tổng số lượt dùng.
+* **Hoàn lượt tự động:** Tự động cộng lại lượt sử dụng voucher cho hệ thống nếu đơn hàng khách sử dụng mã bị hủy hợp lệ.
+
 ### 📊 Thống kê & Báo cáo (Dashboard Module)
 * **Chỉ số KPI:** Tổng quan doanh thu tháng, số lượng đơn hàng, tăng trưởng khách hàng mới và cảnh báo tồn kho thấp.
 * **Biểu đồ doanh thu:** Trực quan hóa doanh thu theo Ngày hoặc Tháng với cơ chế tự động bù đắp dữ liệu (Zero-filling) cho các mốc thời gian không có giao dịch.
@@ -48,7 +54,7 @@ Hệ thống RESTful API mạnh mẽ, dễ mở rộng được thiết kế chu
 * **Security:** Spring Security, JWT (JSON Web Token)
 * **Documentation:** SpringDoc OpenAPI 3 (Swagger UI)
 * **Third-Party Services:** Cloudinary (Lưu trữ ảnh), JavaMailSender (Gửi Email SMTP), VNPAY API (Thanh toán trực tuyến), Ngrok (Tạo đường dẫn để kết nối IPN trên local với VNPay Sandbox)
-* **Kiến trúc:** Modular Monolith (Identity, Catalog, Cart, Order)
+* **Kiến trúc:** Modular Monolith (Identity, Catalog, Cart, Order, Promotion, Statistics)
 
 ## 📖 Tài liệu API (Swagger UI)
 
@@ -112,8 +118,7 @@ Toàn bộ API được viết tài liệu đặc tả chuẩn OpenAPI 3. Bao g�
 ## 🗺️ Lộ trình phát triển (Sắp ra mắt)
 
 - [x] **Thanh toán Online:** Tích hợp cổng thanh toán VNPAY qua cơ chế Webhook/IPN.
-- [ ] **Hệ thống Khuyến mãi:** Quản lý cấu hình mã giảm giá Voucher (Giảm %, Giảm tiền mặt, Giới hạn lượt dùng).
-- [ ] **Tương tác khách hàng:** Đánh giá, Bình luận sản phẩm và Danh sách yêu thích (Wishlist).
+- [x] **Hệ thống Khuyến mãi:** Quản lý cấu hình mã giảm giá Voucher (Giảm %, Giảm tiền mặt, Giới hạn lượt dùng).
 - [x] **Dashboard Admin:** Biểu đồ thống kê doanh thu và số lượng bán ra.
 
 ## 👨‍💻 Tác giả

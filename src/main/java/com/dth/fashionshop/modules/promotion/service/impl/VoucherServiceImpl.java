@@ -1,7 +1,10 @@
 package com.dth.fashionshop.modules.promotion.service.impl;
 
 import com.dth.fashionshop.modules.order.service.AdminOrderService;
+import com.dth.fashionshop.modules.promotion.dto.request.VoucherApplyRequest;
 import com.dth.fashionshop.modules.promotion.dto.request.VoucherRequest;
+import com.dth.fashionshop.modules.promotion.dto.response.VoucherApplyResponse;
+import com.dth.fashionshop.modules.promotion.dto.response.VoucherGuestResponse;
 import com.dth.fashionshop.modules.promotion.dto.response.VoucherResponse;
 import com.dth.fashionshop.modules.promotion.entity.Voucher;
 import com.dth.fashionshop.modules.promotion.enums.DiscountType;
@@ -19,6 +22,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.text.DecimalFormat;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -48,6 +52,22 @@ public class VoucherServiceImpl implements VoucherService {
                 .endDate(voucher.getEndDate())
                 .isActive(voucher.getIsActive())
                 .totalRevenue(revenue)
+                .build();
+    }
+
+    private VoucherGuestResponse mapToGuestResponse(Voucher voucher) {
+        return VoucherGuestResponse.builder()
+                .code(voucher.getCode())
+                .name(voucher.getName())
+                .description(voucher.getDescription())
+                .discountType(voucher.getDiscountType())
+                .discountValue(voucher.getDiscountValue())
+                .maxDiscountAmount(voucher.getMaxDiscountAmount())
+                .minOrderValue(voucher.getMinOrderValue())
+                .usageLimit(voucher.getUsageLimit())
+                .usedCount(voucher.getUsedCount())
+                .startDate(voucher.getStartDate())
+                .endDate(voucher.getEndDate())
                 .build();
     }
 
@@ -202,6 +222,78 @@ public class VoucherServiceImpl implements VoucherService {
         log.info("Admin đã kết thúc sớm Voucher: {}", voucher.getCode());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public Page<VoucherGuestResponse> getStorefrontVouchers(String keyword, VoucherTab tab, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
+        LocalDateTime now = LocalDateTime.now();
+
+        Page<Voucher> voucherPage = voucherRepository.searchStorefrontVouchers(
+                keyword,
+                tab != null ? tab.name() : VoucherTab.ALL.name(),
+                now,
+                pageable
+        );
+
+        return voucherPage.map(this::mapToGuestResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VoucherGuestResponse getVoucherDetailByCode(String code) {
+        String normalizedCode = StringUtils.normalizeCode(code);
+        Voucher voucher = voucherRepository.findByCode(normalizedCode)
+                .orElseThrow(() -> new ResourceNotFoundException("Mã khuyến mãi không tồn tại."));
+
+        return mapToGuestResponse(voucher);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public VoucherApplyResponse calculateDiscount(VoucherApplyRequest request) {
+        String normalizedCode = StringUtils.normalizeCode(request.getCode());
+        Voucher voucher = voucherRepository.findByCode(normalizedCode)
+                .orElseThrow(() -> new RuntimeException("Mã khuyến mãi không tồn tại."));
+
+        validateVoucherForUsage(voucher, request.getCartTotal());
+
+        Long discountAmount = calculateDiscountAmount(voucher, request.getCartTotal());
+
+        return VoucherApplyResponse.builder()
+                .code(voucher.getCode())
+                .discountAmount(discountAmount)
+                .build();
+    }
+
+    @Override
+    @Transactional
+    public void useVoucherWithLock(String code, Long cartTotal) {
+        String normalizedCode = StringUtils.normalizeCode(code);
+
+        Voucher voucher = voucherRepository.findByCodeWithLock(normalizedCode)
+                .orElseThrow(() -> new RuntimeException("Mã khuyến mãi không tồn tại."));
+
+        validateVoucherForUsage(voucher, cartTotal);
+
+        voucher.setUsedCount(voucher.getUsedCount() + 1);
+        voucherRepository.save(voucher);
+
+        log.info("Đã trừ 1 lượt sử dụng của Voucher: {}. Số lượt đã dùng: {}", voucher.getCode(), voucher.getUsedCount());
+    }
+
+    @Override
+    @Transactional
+    public void refundVoucherUsageWithLock(String code) {
+        String normalizedCode = StringUtils.normalizeCode(code);
+
+        Voucher voucher = voucherRepository.findByCodeWithLock(normalizedCode).orElse(null);
+        if (voucher != null && voucher.getUsedCount() > 0) {
+            voucher.setUsedCount(voucher.getUsedCount() - 1);
+            voucherRepository.save(voucher);
+            log.info("Hoàn trả 1 lượt sử dụng cho Voucher do hủy đơn: {}. Lượt đã dùng hiện tại: {}", voucher.getCode(), voucher.getUsedCount());
+        }
+    }
+
     private void validateVoucherDates(LocalDateTime startDate, LocalDateTime endDate, boolean isCreate) {
         LocalDateTime now = LocalDateTime.now();
 
@@ -228,5 +320,38 @@ public class VoucherServiceImpl implements VoucherService {
                 throw new RuntimeException("Giảm giá theo số tiền cố định không được phép thiết lập số tiền giảm tối đa!");
             }
         }
+    }
+
+    private void validateVoucherForUsage(Voucher voucher, Long cartTotal) {
+        LocalDateTime now = LocalDateTime.now();
+
+        if (!voucher.getIsActive() || now.isBefore(voucher.getStartDate()) || now.isAfter(voucher.getEndDate())) {
+            throw new RuntimeException("Mã khuyến mãi đã hết hạn hoặc chưa bắt đầu.");
+        }
+
+        if (voucher.getUsageLimit() != null && voucher.getUsedCount() >= voucher.getUsageLimit()) {
+            throw new RuntimeException("Mã khuyến mãi đã hết lượt sử dụng.");
+        }
+
+        if (cartTotal < voucher.getMinOrderValue()) {
+            DecimalFormat formatter = new DecimalFormat("#,###");
+            String minOrderFormatted = formatter.format(voucher.getMinOrderValue());
+            throw new RuntimeException("Đơn hàng chưa đạt giá trị tối thiểu (" + minOrderFormatted + " VNĐ) để áp dụng mã này.");
+        }
+    }
+
+    private Long calculateDiscountAmount(Voucher voucher, Long cartTotal) {
+        long discountAmount = 0L;
+
+        if (voucher.getDiscountType() == DiscountType.PERCENT) {
+            discountAmount = (cartTotal * voucher.getDiscountValue()) / 100;
+            if (voucher.getMaxDiscountAmount() != null && discountAmount > voucher.getMaxDiscountAmount()) {
+                discountAmount = voucher.getMaxDiscountAmount();
+            }
+        } else if (voucher.getDiscountType() == DiscountType.FIXED_AMOUNT) {
+            discountAmount = voucher.getDiscountValue();
+        }
+
+        return Math.min(discountAmount, cartTotal);
     }
 }

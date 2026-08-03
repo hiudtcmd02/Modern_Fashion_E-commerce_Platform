@@ -35,6 +35,12 @@ A robust, scalable, and feature-rich RESTful API built specifically for a clothi
 * **Edge Case Handling:** Built-in safeguards against Double Payments, Data Loss, and Network Latency (Compensating transactions with automated email alerts for manual refunds).
 * **Salvage Logic:** Gracefully recover abandoned payment sessions if the user retries within the gateway's timeout window.
 
+### 🎟️ Promotion & Voucher Module
+* **Flexible Discount Types:** Supports both Percentage-based discounts (with max discount caps) and Fixed-amount discounts.
+* **Race Condition Prevention:** Utilizes database-level Pessimistic Locking to strictly enforce voucher usage limits during high-concurrency checkout scenarios.
+* **Strict Validation Rules:** Real-time validation for time constraints (Upcoming, Ongoing, Expired), minimum order values, and global usage limits.
+* **Auto-Refund Usage:** Automatically restores voucher usage counts back to the system if an applied order is cancelled.
+
 ### 📊 Statistics & Dashboard Module
 * **KPI Insights:** Real-time revenue analytics, order status, new user growth, and low-stock alerts.
 * **Revenue Analytics:** Interactive charts (Bar/Line) tracking revenue by Day or Month with automatic data filling (Zero-filling) for empty intervals.
@@ -48,7 +54,7 @@ A robust, scalable, and feature-rich RESTful API built specifically for a clothi
 * **Security:** Spring Security, JWT (JSON Web Token)
 * **Documentation:** SpringDoc OpenAPI 3 (Swagger UI)
 * **Third-Party Services:** Cloudinary (Image Hosting), JavaMailSender (SMTP Email), VNPAY API (Online Payment), Ngrok (Exposes local server to connect the IPN Webhook with VNPAY Sandbox)
-* **Architecture:** Modular Monolith (Identity, Catalog, Cart, Order)
+* **Architecture:** Modular Monolith (Identity, Catalog, Cart, Order, Promotion, Statistics)
 
 ## 📖 API Documentation (Swagger UI)
 
@@ -112,8 +118,7 @@ The API is fully documented using OpenAPI 3 specifications. It includes detailed
 ## 🗺️ Roadmap (Upcoming Features)
 
 - [x] **Online Payment Integration:** VNPAY gateway integration via Webhooks/IPN.
-- [ ] **Promotion Engine:** Voucher management system (Percentage/Fixed discount, Usage limits).
-- [ ] **Customer Interactions:** Product Ratings, Reviews, and Wishlist.
+- [x] **Promotion Engine:** Voucher management system (Percentage/Fixed discount, Usage limits).
 - [x] **Admin Dashboard:** Revenue and Sales statistical charts.
 
 ## 👨‍💻 Author

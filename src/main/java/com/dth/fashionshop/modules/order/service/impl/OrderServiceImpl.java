@@ -18,6 +18,9 @@ import com.dth.fashionshop.modules.order.enums.*;
 import com.dth.fashionshop.modules.order.repository.OrderRepository;
 import com.dth.fashionshop.modules.order.repository.PaymentTransactionRepository;
 import com.dth.fashionshop.modules.order.service.OrderService;
+import com.dth.fashionshop.modules.promotion.dto.request.VoucherApplyRequest;
+import com.dth.fashionshop.modules.promotion.dto.response.VoucherApplyResponse;
+import com.dth.fashionshop.modules.promotion.service.VoucherService;
 import com.dth.fashionshop.shared.email.EmailService;
 import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import com.dth.fashionshop.shared.utils.VNPayUtils;
@@ -53,6 +56,7 @@ public class OrderServiceImpl implements OrderService {
     private final AddressService addressService;
     private final CartService cartService;
     private final ProductService productService;
+    private final VoucherService voucherService;
 
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final VNPayConfig vnPayConfig;
@@ -112,6 +116,7 @@ public class OrderServiceImpl implements OrderService {
                 .customerNote(order.getCustomerNote())
                 .totalAmount(order.getTotalAmount())
                 .shippingFee(order.getShippingFee())
+                .discountAmount(order.getDiscountAmount())
                 .finalAmount(order.getFinalAmount())
                 .createdAt(order.getCreatedAt())
                 .items(allItems)
@@ -227,12 +232,33 @@ public class OrderServiceImpl implements OrderService {
             order.getOrderDetails().add(orderDetail);
         }
 
-        long finalAmountFromDB = totalAmount + defaultShippingFee;
+        long discountAmount = 0L;
+        String appliedVoucherCode = null;
 
-        if (finalAmountFromDB != request.getExpectedTotalAmount()) {
-            throw new RuntimeException("Giá của một số sản phẩm hoặc phí vận chuyển đã thay đổi. Vui lòng tải lại trang để cập nhật giá mới nhất!");
+        if (request.getVoucherCode() != null && !request.getVoucherCode().trim().isEmpty()) {
+            VoucherApplyRequest applyReq = new VoucherApplyRequest();
+            applyReq.setCode(request.getVoucherCode());
+            applyReq.setCartTotal(totalAmount);
+
+            VoucherApplyResponse applyRes = voucherService.calculateDiscount(applyReq);
+            discountAmount = applyRes.getDiscountAmount();
+            appliedVoucherCode = applyRes.getCode();
+
+            voucherService.useVoucherWithLock(appliedVoucherCode, totalAmount);
         }
 
+        long finalAmountFromDB = totalAmount + defaultShippingFee - discountAmount;
+
+        if (finalAmountFromDB < 0) {
+            finalAmountFromDB = 0L;
+        }
+
+        if (finalAmountFromDB != request.getExpectedTotalAmount()) {
+            throw new RuntimeException("Giá của một số sản phẩm hoặc phí vận chuyển hoặc khuyến mãi đã thay đổi. Vui lòng tải lại trang để cập nhật giá mới nhất!");
+        }
+
+        order.setVoucherCode(appliedVoucherCode);
+        order.setDiscountAmount(discountAmount);
         order.setTotalAmount(totalAmount);
         order.setFinalAmount(finalAmountFromDB);
 
@@ -322,6 +348,10 @@ public class OrderServiceImpl implements OrderService {
 
         for (OrderDetail detail : order.getOrderDetails()) {
             productService.increaseStockWithLock(detail.getVariant().getId(), detail.getQuantity());
+        }
+
+        if (order.getVoucherCode() != null && !order.getVoucherCode().trim().isEmpty()) {
+            voucherService.refundVoucherUsageWithLock(order.getVoucherCode());
         }
 
         order.setOrderStatus(OrderStatus.CANCELLED);

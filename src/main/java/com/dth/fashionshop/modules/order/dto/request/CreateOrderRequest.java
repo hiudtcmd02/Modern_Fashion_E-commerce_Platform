@@ -28,5 +28,8 @@ public class CreateOrderRequest {
     @NotNull(message = "Hệ thống cần xác nhận tổng tiền cần thanh toán dự kiến từ giao diện")
     private Long expectedTotalAmount;
 
+    @Schema(description = "Mã voucher người dùng áp dụng. Nếu không áp dụng mã nào, truyền giá trị null", example = "SUMMER26")
+    private String voucherCode;
+
     private String customerNote;
 }

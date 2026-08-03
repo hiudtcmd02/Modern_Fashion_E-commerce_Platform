@@ -13,9 +13,12 @@ import com.dth.fashionshop.modules.order.enums.PaymentMethod;
 import com.dth.fashionshop.modules.order.enums.PaymentStatus;
 import com.dth.fashionshop.modules.order.repository.OrderRepository;
 import com.dth.fashionshop.modules.order.service.AdminOrderService;
+import com.dth.fashionshop.modules.promotion.service.VoucherService;
 import com.dth.fashionshop.shared.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -34,6 +37,10 @@ public class AdminOrderServiceImpl implements AdminOrderService {
 
     private final OrderRepository orderRepository;
     private final ProductService productService;
+
+    @Autowired
+    @Lazy
+    private VoucherService voucherService;
 
     private AdminOrderListResponse mapToAdminListResponse(Order order) {
         return AdminOrderListResponse.builder()
@@ -72,6 +79,7 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 .internalNote(order.getInternalNote())
                 .totalAmount(order.getTotalAmount())
                 .shippingFee(order.getShippingFee())
+                .discountAmount(order.getDiscountAmount())
                 .finalAmount(order.getFinalAmount())
                 .createdAt(order.getCreatedAt())
                 .items(items)
@@ -183,6 +191,11 @@ public class AdminOrderServiceImpl implements AdminOrderService {
                 productService.increaseStockWithLock(detail.getVariant().getId(), detail.getQuantity());
             }
             log.info("Đã hoàn kho thành công cho đơn hàng bị Hủy/Trả: {}", order.getOrderCode());
+
+            if (newOrderStatus == OrderStatus.CANCELLED && order.getVoucherCode() != null && !order.getVoucherCode().trim().isEmpty()) {
+                voucherService.refundVoucherUsageWithLock(order.getVoucherCode());
+                log.info("Đã hoàn lại lượt sử dụng voucher {} cho đơn hàng bị Hủy: {}", order.getVoucherCode(), order.getOrderCode());
+            }
         }
 
         order.setOrderStatus(newOrderStatus);

@@ -1,14 +1,17 @@
 package com.dth.fashionshop.modules.promotion.repository;
 
 import com.dth.fashionshop.modules.promotion.entity.Voucher;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Optional;
 
 @Repository
 public interface VoucherRepository extends JpaRepository<Voucher, Long> {
@@ -27,6 +30,28 @@ public interface VoucherRepository extends JpaRepository<Voucher, Long> {
             "  OR (:status = 'ENDED' AND (v.isActive = false OR v.endDate < :now))" +
             ")")
     Page<Voucher> searchAndFilterAdminVouchers(
+            @Param("keyword") String keyword,
+            @Param("status") String status,
+            @Param("now") LocalDateTime now,
+            Pageable pageable);
+
+    // Tìm Voucher theo mã Code
+    Optional<Voucher> findByCode(String code);
+
+    // Tìm Voucher theo mã Code kèm Pessimistic Lock
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("SELECT v FROM Voucher v WHERE v.code = :code")
+    Optional<Voucher> findByCodeWithLock(@Param("code") String code);
+
+    // Tìm kiếm và lọc Voucher cho Khách hàng
+    @Query("SELECT v FROM Voucher v WHERE v.isActive = true AND v.endDate >= :now " +
+            "AND (:keyword IS NULL OR :keyword = '' OR LOWER(v.code) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(v.name) LIKE LOWER(CONCAT('%', :keyword, '%'))) " +
+            "AND (" +
+            "  :status IS NULL OR :status = '' OR :status = 'ALL' " +
+            "  OR (:status = 'UPCOMING' AND v.startDate > :now) " +
+            "  OR (:status = 'ONGOING' AND v.startDate <= :now) " +
+            ")")
+    Page<Voucher> searchStorefrontVouchers(
             @Param("keyword") String keyword,
             @Param("status") String status,
             @Param("now") LocalDateTime now,

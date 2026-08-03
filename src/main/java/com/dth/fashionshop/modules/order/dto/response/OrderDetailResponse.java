@@ -28,6 +28,7 @@ public class OrderDetailResponse {
 
     private Long totalAmount;
     private Long shippingFee;
+    private Long discountAmount;
     private Long finalAmount;
 
     private LocalDateTime createdAt;

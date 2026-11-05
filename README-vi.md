@@ -79,12 +79,15 @@ Toàn bộ API được viết tài liệu đặc tả chuẩn OpenAPI 3. Bao g�
     ```bash
     cd Modern_Fashion_E-commerce_Platform
     ```
+    
+2.  **Tạo cơ sở dữ liệu:**
+    Tạo cơ sở dữ liệu phục vụ cho hệ thống, sử dụng MySQL Server.
 
-2.  **Biến môi trường:**
+3.  **Biến môi trường:**
     Tạo file `.env` ở thư mục gốc dựa trên mẫu sau:
     ```env
-    DB_URL=jdbc:mysql://localhost:3306/ecommerce_db?useSSL=false&allowPublicKeyRetrieval=true
-    DB_USERNAME=root
+    DB_URL=jdbc:mysql://<Your_DB_Address_Server>:<Port>/<Your_DB_Name>?useSSL=false&allowPublicKeyRetrieval=true
+    DB_USERNAME=your_db_username
     DB_PASSWORD=your_db_password
     
     MAIL_USERNAME=your_email@gmail.com
@@ -103,13 +106,13 @@ Toàn bộ API được viết tài liệu đặc tả chuẩn OpenAPI 3. Bao g�
     VNPAY_RETURN_URL=your_vnpay_return_url
     ```
 
-3.  **Build và Chạy project:**
+4.  **Build và Chạy project:**
     ```bash
     mvn clean install
     mvn spring-boot:run
     ```
 
-4.  **Cấu hình VNPAY IPN (Webhook):**
+5.  **Cấu hình VNPAY IPN (Webhook):**
     * Khởi chạy Ngrok để public port của backend (Ví dụ: `ngrok http 8080`).
     * Copy đường dẫn công khai HTTPS do Ngrok cấp.
     * Đăng nhập vào trang quản trị **VNPAY Sandbox Merchant**.

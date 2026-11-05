@@ -79,12 +79,15 @@ The API is fully documented using OpenAPI 3 specifications. It includes detailed
     ```bash
     cd Modern_Fashion_E-commerce_Platform
     ```
+    
+2.  **Create Database:**
+    Create a Database for this project using MySQL Server.
 
-2.  **Environment Variables:**
+3.  **Environment Variables:**
     Create a `.env` file in the root directory based on the following template:
     ```env
-    DB_URL=jdbc:mysql://localhost:3306/ecommerce_db?useSSL=false&allowPublicKeyRetrieval=true
-    DB_USERNAME=root
+    DB_URL=jdbc:mysql://<Your_DB_Address_Server>:<Port>/<Your_DB_Name>?useSSL=false&allowPublicKeyRetrieval=true
+    DB_USERNAME=your_db_username
     DB_PASSWORD=your_db_password
     
     MAIL_USERNAME=your_email@gmail.com
@@ -103,13 +106,13 @@ The API is fully documented using OpenAPI 3 specifications. It includes detailed
     VNPAY_RETURN_URL=your_vnpay_return_url
     ```
 
-3.  **Build and Run:**
+4.  **Build and Run:**
     ```bash
     mvn clean install
     mvn spring-boot:run
     ```
 
-4.  **Configure VNPAY IPN (Webhook):**
+5.  **Configure VNPAY IPN (Webhook):**
     * Start Ngrok to expose your backend port (e.g., `ngrok http 8080`).
     * Copy the public HTTPS URL provided by Ngrok.
     * Log in to your **VNPAY Sandbox Merchant Portal**.
